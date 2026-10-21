@@ -1,0 +1,27 @@
+import {fragmentLabel} from './fragment-strings.js';
+import {validateFragment} from './fragment-core.js';
+import {attachEffect} from './effect-kit.js';
+const node=(tag,text)=>{const e=document.createElement(tag);if(text)e.textContent=text;return e;};
+let sequence=0;
+export function mountFragment(host,input,{onAction=()=>{},onSubmit=null,reducedMotion,locale='en',mode='interactive'}={}){
+ const t=key=>fragmentLabel(key,locale);
+ let spec=validateFragment(input),disposed=false,effects=[],generation=0,values={email:''};const prefix='ik-fragment-'+(++sequence);const abort=new AbortController(),shell=node('section');shell.className='ik-fragment';host.append(shell);const listen=(el,event,fn)=>el.addEventListener(event,fn,{signal:abort.signal});
+ function clear(){effects.forEach(e=>e.dispose());effects=[];shell.replaceChildren();}
+ function bind(target){const effect=attachEffect(target,spec.effect,{reducedMotion,mode});effects.push(effect);return effect;}
+ function render(){clear();shell.append(node('h3',spec.content.title),node('p',spec.content.body));
+  if(spec.id==='button'){const b=node('button',t('save'));b.type='button';b.disabled=spec.state==='disabled';shell.append(b);const c=bind(b);if(spec.state==='pressed')c.renderAt(800);if(spec.state==='focus')b.focus();listen(b,'click',()=>onAction({type:'activate'}));}
+  else if(spec.id==='cards'){const group=node('div');group.className='fragment-cards';shell.append(group);spec.content.items.forEach((text,i)=>{const b=node('button',text);b.type='button';b.setAttribute('aria-pressed',String(spec.state==='selected'&&i===0));listen(b,'click',()=>{for(const c of group.children)c.setAttribute('aria-pressed',String(c===b));onAction({type:'select',index:i});});group.append(b);const c=bind(b);if(spec.state==='hover'&&i===0)c.renderAt(900);if(spec.state==='focus'&&i===0)b.focus();});}
+  else if(spec.id==='form')renderForm();
+  else renderList();
+ }
+ function renderForm(){const form=node('form'),label=node('label',t('email')),input=node('input'),error=node('p'),status=node('p'),submit=node('button',t('preferences')),failure=node('label',t('failToggle')),failInput=node('input');input.type='email';input.required=true;input.id=prefix+'-email';input.value=values.email;label.htmlFor=input.id;error.id=prefix+'-error';input.setAttribute('aria-describedby',error.id);error.setAttribute('role','status');status.setAttribute('role','status');submit.type='submit';failInput.type='checkbox';failure.append(failInput);form.noValidate=true;form.append(label,input,error,failure,submit,status);shell.append(form);bind(submit);
+  if(spec.state==='invalid'){input.value=values.email||'invalid';input.setAttribute('aria-invalid','true');error.textContent=t('invalid');}if(spec.state==='valid')input.value=values.email||'reader@example.com';if(spec.state==='submitting'){submit.disabled=true;status.textContent=t('submitting')+' · '+t('statePreview');}if(spec.state==='success')status.textContent=t('success');if(spec.state==='failure')status.textContent=t('failure');
+  listen(input,'input',()=>{values.email=input.value;if(input.validity.valid){error.textContent='';input.setAttribute('aria-invalid','false');}});
+  listen(form,'submit',async event=>{event.preventDefault();if(submit.disabled)return;values.email=input.value;if(!input.validity.valid){input.setAttribute('aria-invalid','true');error.textContent=t('invalid');input.focus();return;}submit.disabled=true;status.textContent=t('submitting');const token=++generation;try{if(onSubmit)await onSubmit({email:values.email});else {await Promise.resolve();if(failInput.checked)throw new Error('Local demo failure');}if(!disposed&&token===generation)status.textContent=onSubmit?t('completed'):t('success');}catch{if(!disposed&&token===generation){status.textContent=t('failure');input.focus();}}finally{if(!disposed&&token===generation)submit.disabled=false;}});
+ }
+ function renderList(){const input=node('input'),list=node('ul'),status=node('p'),retry=node('button',t('retry'));input.type='search';input.setAttribute('aria-label',t('filter'));status.setAttribute('role','status');retry.type='button';shell.append(input,status,list,retry);
+  function results(query=''){effects.forEach(e=>e.dispose());effects=[];list.replaceChildren();const items=spec.content.items.filter(x=>x.toLowerCase().includes(query.toLowerCase()));if(spec.state==='loading'){status.textContent=t('loading')+' · '+t('statePreview');list.setAttribute('aria-busy','true');}else if(spec.state==='error'){status.textContent=t('listError');list.removeAttribute('aria-busy');}else if(spec.state==='empty'||!items.length){status.textContent=t('empty');list.removeAttribute('aria-busy');}else{status.textContent=t('results');list.removeAttribute('aria-busy');items.forEach(text=>list.append(node('li',text)));bind(list);}retry.hidden=spec.state!=='error';}
+  listen(input,'input',()=>results(input.value));listen(retry,'click',()=>{spec.state='loaded';results(input.value);onAction({type:'retry'});});results();
+ }
+ render();return {get spec(){return structuredClone(spec);},update(params){spec=validateFragment(spec,params);effects.forEach(e=>e.update(spec.params));},renderAt(ms){effects.forEach(e=>e.renderAt(ms));},play(){effects.forEach(e=>e.play());},dispose(){if(disposed)return;disposed=true;++generation;abort.abort();clear();shell.remove();}};
+}

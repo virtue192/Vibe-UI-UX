@@ -91,7 +91,7 @@ console.log('Validated parameters and refreshed descriptions / JSON.');
 }
 
 export async function componentArchive(spec,target,options={}){
- const files=projectFiles(spec,target,options),version=new URL(import.meta.url).searchParams.get('v');
+ const files={...projectFiles(spec,target,options),...(options.extraFiles||{})},version=new URL(import.meta.url).searchParams.get('v');
  const resource=async name=>{const url=new URL('./'+name,import.meta.url);if(version)url.searchParams.set('v',version);const response=await fetch(url,{cache:'no-store'});if(!response.ok)throw new Error('Export resource unavailable: '+name);return response;};
  for(const name of kitFiles)files['render-kit/'+name]=(await (await resource(name)).text()).replace(/\?v=\d+(?:\.\d+){4}/g,'');
  files['LICENSE']=await (await resource('application-license.txt')).text();

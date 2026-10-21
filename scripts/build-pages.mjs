@@ -1,17 +1,20 @@
 import './build.mjs';
-import {cp, mkdir, readFile, writeFile} from 'node:fs/promises';
+import {cp, mkdir, readFile, writeFile, rm} from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const target = path.join(root, 'dist/pages');
+if(path.relative(root,target)!==path.join('dist','pages'))throw new Error('Unexpected Pages target');
+await rm(target,{recursive:true,force:true});
 await mkdir(target, {recursive: true});
 await cp(path.join(root, 'dist/client'), target, {recursive: true});
 await writeFile(path.join(target, 'transport.js'), "export const transportMode = 'direct';\n");
 await writeFile(path.join(target, '.nojekyll'), '');
 const policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self' https://tokendance.space; object-src 'none'; base-uri 'self'; form-action 'self'";
-for (const name of ['index.html', 'studio.html', 'docs.html', 'authorize.html', 'effect-example.html','community.html','connection-check.html']) {
+for (const name of ['index.html', 'studio.html', 'docs.html', 'authorize.html', 'effect-example.html','community.html','submit.html','submission.html','connection-check.html','integrations.html']) {
+  const pagePolicy=['community.html','submit.html','submission.html'].includes(name)?policy.replace("connect-src 'self' https://tokendance.space;","connect-src 'self' https://api.github.com;"):policy;
   const file = path.join(target, name);
   const html = await readFile(file, 'utf8');
-  await writeFile(file, html.replace('<head>', '<head><meta http-equiv="Content-Security-Policy" content="' + policy + '">'));
+  await writeFile(file, html.replace('<head>', '<head><meta http-equiv="Content-Security-Policy" content="' + pagePolicy + '">'));
 }
 console.log('GitHub Pages ready: dist/pages/; portable relative URLs, browser-direct BYOK, no server secrets.');
