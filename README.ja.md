@@ -6,7 +6,9 @@
 
 [ホームページ](https://vibe-design-labs.github.io/Vibe-UI-UX/) · [スタジオを試す](https://vibe-design-labs.github.io/Vibe-UI-UX/studio.html) · [変更履歴](CHANGELOG.md)
 
-**v0.5.0.0.0 · 75 デザイン用語 · 75 専用プレビューテンプレート · 5 ローカルレシピ系統 · MIT + OFL**
+**v0.5.1.0.0 · 75 デザイン用語 · 75 専用プレビューテンプレート · 5 ローカルレシピ系統 · MIT + OFL**
+
+New: a unified cream / olive interface, an effect plaza, real pending submissions, and a submission workflow. A branch push is not a production deployment. See the [plaza guide](docs/COMMUNITY_PLAZA.md) and [release boundaries](docs/RELEASE_0.5.1.0.0.md).
 
 作業台更新：候補比較、保存版、ローカルプロジェクト、共通制約、8件の導入例、利用者 Skill、制御された組合せと4種類の部品。ローカル実装で、公式サイトへの公開は未実施です。[利用ガイド](docs/WORKBENCH_GUIDE.md)・[検証範囲](docs/RELEASE_0.5.0.0.0.md)。
 

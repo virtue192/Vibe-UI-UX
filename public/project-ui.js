@@ -48,7 +48,7 @@ export function setupProjectWorkbench({catalog,getRecord,applyRecord,guard,markS
  document.addEventListener('intentkit-locale',()=>{render();if(latest)showValidation(latest);});render();
  const allowed=new WeakSet();
  document.addEventListener('click',async event=>{
-  const target=event.target.closest('#copy,#component-export > button,#compiler-copy,#compiler-export,#generated-panel [data-action="download"],#generated-panel [data-action="submit"]');
+  const target=event.target.closest('#copy,[data-community-submit],#component-export > button,#compiler-copy,#compiler-export,#generated-panel [data-action="download"],#generated-panel [data-action="submit"]');
   if(!target||allowed.has(target))return;event.preventDefault();event.stopImmediatePropagation();
   try{const record=await capture();showValidation(record);if(deliveryIssues(record.plan).length){status.textContent=w('blocked');checks.scrollIntoView({block:'nearest'});return;}allowed.add(target);target.click();allowed.delete(target);}catch(e){status.textContent=w('error')+' · '+e.message;}
  },true);

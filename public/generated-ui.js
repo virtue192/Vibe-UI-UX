@@ -1,10 +1,10 @@
+import {transferSubmission} from './submission-state.js';
 import {w} from './workbench-strings.js';
 import {modelReceipt} from './model-audit.js';
 import {requestGeneratedEffect} from './generation-client.js';
 import {mountGeneratedPreview} from './generated-preview.js';
 import {generatedParams,generatedBrief} from './generated-core.js';
 import {generatedZip,generatedProject,importGeneratedProject} from './generated-export.js';
-import {encodedSubmission} from './submission-codec.js';
 import {diagnostic} from './model-response.js';
 import {aiText as text,errorText} from './generated-strings.js';
 import {locale,t} from './i18n.js';
@@ -71,20 +71,8 @@ export function setupGeneratedStudio({getCredentials,appURL,mode,onStart,catalog
  }
  async function submission(){
   if(!artifact||!ready)return;
-  const snapshot=generatedProject(artifact,params),dialog=node('dialog','community-dialog generated-dialog');
-  const title=node('h2','',text('submit')),author=node('input');author.maxLength=48;author.autocomplete='off';const label=node('label','',text('author'));label.append(author);
-  const consent=node('input');consent.type='checkbox';const publicLabel=node('label','community-consent');publicLabel.append(consent,node('span','',text('consent')));
-  const hint=node('p'),actions=node('div','generated-actions'),prepare=node('button','',text('open')),close=node('button','',t('close'));prepare.disabled=true;consent.addEventListener('change',()=>{prepare.disabled=!consent.checked;});
-  close.addEventListener('click',()=>dialog.close());dialog.addEventListener('close',()=>{dialog.remove();panel.querySelector('[data-action="submit"]')?.focus();});actions.append(prepare,close);dialog.append(title,label,publicLabel,hint,actions);document.body.append(dialog);dialog.showModal();
-  prepare.addEventListener('click',async()=>{
-   prepare.disabled=true;consent.disabled=true;author.disabled=true;try{
-    if(!config){const response=await fetch(new URL('./community-config.json',import.meta.url));if(!response.ok)throw new Error();config=await response.json();}
-    const payload={schema:'intentkit.community-submission',schema_version:2,kind:'generated',artifact:snapshot.artifact,params:snapshot.params,locale:generationLocale,title:snapshot.artifact.title,summary:snapshot.artifact.summary.slice(0,300),author_name:author.value.trim(),attribution:!!author.value.trim(),consent:true,version:config.version,source_url:''};
-    const encoded=await encodedSubmission(payload,catalog,config.repository);const link=node('a','community-submit-link',text('open'));link.href=encoded.url;link.target='_blank';link.rel='noopener noreferrer';actions.prepend(link);prepare.remove();
-    if(encoded.needsPaste){hint.textContent=text('paste');const copy=node('button','',text('copyBody'));copy.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(encoded.body);notify(t('copied'));}catch{notify(t('copyFail'));}});actions.prepend(copy);const fallback=node('textarea');fallback.readOnly=true;fallback.value=encoded.body;dialog.append(fallback);}
-    else {hint.textContent=locale==='zh-CN'?'点击打开后，在 GitHub 确认提交。机器人创建待审 PR；审核合并前官网不变。':'Confirm the issue on GitHub. The bot creates a review PR; the site remains unchanged until review and merge.';link.click();}
-   }catch(error){consent.disabled=false;author.disabled=false;prepare.disabled=!consent.checked;hint.textContent=error.message==='submission-size'?text('submissionSize'):t('apiFormat');}
-  });
+  try{if(!config){const response=await fetch(new URL('./community-config.json',import.meta.url));if(!response.ok)throw Error();config=await response.json();}
+  const snapshot=generatedProject(artifact,params);transferSubmission({schema:'intentkit.community-submission',schema_version:2,kind:'generated',artifact:snapshot.artifact,params:snapshot.params,locale:generationLocale,title:snapshot.artifact.title,summary:snapshot.artifact.summary.slice(0,300),author_name:'',attribution:true,consent:true,version:config.version,source_url:''});}catch{notify(t('apiFormat'));}
  }
  function clear(){cancel();stop();artifact=null;params=null;failure=null;audit=null;progress=null;trace=null;modeView(false);render();}
  button.addEventListener('click',run);input.addEventListener('input',cancel);

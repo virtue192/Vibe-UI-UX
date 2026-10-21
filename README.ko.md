@@ -6,7 +6,9 @@
 
 [홈페이지](https://vibe-design-labs.github.io/Vibe-UI-UX/) · [작업대 체험](https://vibe-design-labs.github.io/Vibe-UI-UX/studio.html) · [변경 기록](CHANGELOG.md)
 
-**v0.5.0.0.0 · 75 디자인 항목 · 75 전용 미리보기 템플릿 · 5 로컬 레시피 유형 · MIT + OFL**
+**v0.5.1.0.0 · 75 디자인 항목 · 75 전용 미리보기 템플릿 · 5 로컬 레시피 유형 · MIT + OFL**
+
+New: a unified cream / olive interface, an effect plaza, real pending submissions, and a submission workflow. A branch push is not a production deployment. See the [plaza guide](docs/COMMUNITY_PLAZA.md) and [release boundaries](docs/RELEASE_0.5.1.0.0.md).
 
 작업대 개편: 후보·버전 비교, 로컬 프로젝트, 공통 제약, 통합 사례 8개, 사용자 Skill, 제한된 효과 조합과 네 가지 조각. 현재 로컬 구현이며 공식 사이트에 배포되지 않았습니다. [가이드](docs/WORKBENCH_GUIDE.md) · [검증 범위](docs/RELEASE_0.5.0.0.0.md).
 

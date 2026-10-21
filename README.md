@@ -6,7 +6,9 @@
 
 [打开官网](https://vibe-design-labs.github.io/Vibe-UI-UX/) · [直接试用工作台](https://vibe-design-labs.github.io/Vibe-UI-UX/studio.html) · [更新记录](CHANGELOG.md)
 
-**v0.5.0.0.0 · 75 设计词条 · 75 专属预览模板 · 5 本地配方家族 · MIT + OFL**
+**v0.5.1.0.0 · 75 设计词条 · 75 专属预览模板 · 5 本地配方家族 · MIT + OFL**
+
+新版本：特效广场、真实待审队列、独立投稿与进度页，以及统一的米白 / 橄榄绿界面。分支推送不等于官网已发布。详见[广场使用说明](docs/COMMUNITY_PLAZA.md)与[本版验证边界](docs/RELEASE_0.5.1.0.0.md)。
 
 工作台改版：候选与版本比较、本机项目、统一约束、8 个接入案例、使用者 Skill，以及白名单组合与四类片段。此版本为本地实现，尚未部署到官网。详见[新工作台使用说明](docs/WORKBENCH_GUIDE.md)和[验证边界](docs/RELEASE_0.5.0.0.0.md)。
 

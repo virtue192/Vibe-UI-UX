@@ -18,7 +18,7 @@ const metadata=JSON.parse(await readFile(path.join(root,'package.json'),'utf8'))
 if(!/^(?:0|[1-9]\d*)(?:\.(?:0|[1-9]\d*)){4}$/.test(metadata.intentkitVersion))throw new Error('intentkitVersion must have five integer segments');
 await writeFile(path.join(root,'dist/client/version.json'),JSON.stringify({version:metadata.intentkitVersion,package_version:metadata.version})+'\n');
 await writeFile(path.join(root,'dist/client/leaf-cursor.svg'),leafMarkup()+'\n');
-for(const name of ['index.html','studio.html','docs.html','authorize.html','effect-example.html','community.html','generated-frame.html','connection-check.html','integrations.html']){
+for(const name of ['index.html','studio.html','docs.html','authorize.html','effect-example.html','community.html','submit.html','submission.html','generated-frame.html','connection-check.html','integrations.html']){
  const file=path.join(root,'dist/client',name);const html=await readFile(file,'utf8');
  await writeFile(file,html.replaceAll('__PROJECT_VERSION__',metadata.intentkitVersion).replace(/((?:src|href)="\.\/[^"?]+\.(?:js|css|woff2|zip))"/g,'$1?v='+metadata.intentkitVersion+'"'));
 }

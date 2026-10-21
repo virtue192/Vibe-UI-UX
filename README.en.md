@@ -6,7 +6,9 @@
 
 [Website](https://vibe-design-labs.github.io/Vibe-UI-UX/) · [Try the studio](https://vibe-design-labs.github.io/Vibe-UI-UX/studio.html) · [Changelog](CHANGELOG.md)
 
-**v0.5.0.0.0 · 75 design entries · 75 dedicated preview templates · 5 local recipe families · MIT + OFL**
+**v0.5.1.0.0 · 75 design entries · 75 dedicated preview templates · 5 local recipe families · MIT + OFL**
+
+New: a unified cream / olive interface, an effect plaza, real pending submissions, and a submission workflow. A branch push is not a production deployment. See the [plaza guide](docs/COMMUNITY_PLAZA.md) and [release boundaries](docs/RELEASE_0.5.1.0.0.md).
 
 Workbench update: immutable candidates, comparison, local projects, shared constraints, 8 integration cases, a consumer Skill, controlled compositions and four task fragments. This is a local implementation, not yet deployed. See the [workbench guide](docs/WORKBENCH_GUIDE.md) and [verification boundaries](docs/RELEASE_0.5.0.0.0.md).
 
