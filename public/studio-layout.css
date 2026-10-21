@@ -4,9 +4,9 @@
 .studio-body button,.studio-body input,.studio-body select,.studio-body textarea{font-family:inherit;font-size:14px}
 .studio-body button{min-height:36px;cursor:pointer}
 .studio-body button:focus-visible,.studio-body summary:focus-visible{outline:3px solid #b5452e;outline-offset:3px}
-.studio-body .studio-header{height:64px;padding:0 24px;position:relative}
-.studio-body .studio-main{max-width:1800px;padding:14px 24px;margin:auto}
-.studio-body .studio-title{margin:0 0 12px;gap:12px;align-items:center;flex-wrap:wrap}
+.studio-body .studio-header{height:64px;min-height:0;padding:0 24px;position:relative}
+.studio-body .studio-main{max-width:1800px;padding:8px 24px;margin:auto}
+.studio-body .studio-title{margin:0 0 6px;gap:12px;align-items:center;flex-wrap:wrap}
 .studio-body .studio-title h1{font-size:24px;margin:0;font-family:'IntentKit Brush',serif;line-height:1.4}
 .studio-body .studio-title p,.studio-body .studio-version{display:none}
 .studio-body .studio-layout{display:grid;grid-template-columns:210px minmax(0,1fr) 260px;gap:16px;align-items:start}
@@ -31,6 +31,15 @@
 .studio-body .intent-box label{line-height:1.4}
 .studio-body .intent-actions button#generate{font-size:14px;min-height:34px}
 .studio-body .intent-actions button#compile{min-height:34px}
+.studio-body .intent-actions button{height:34px;line-height:20px}
+.studio-body .intent-box>label{height:auto;min-height:0;margin:0 0 5px}
+.studio-body .preview-panel .panel-top{padding:6px 16px}
+.studio-body .sample-note{padding:5px 16px}
+.studio-body .studio-preview .ik-effect-card{padding:18px}
+.studio-body .studio-preview .ik-card-title{font-size:24px;margin-bottom:6px}
+.studio-body .studio-preview .ik-card-body{font-size:16px;line-height:1.5}
+.studio-body .studio-preview .ik-card-icon{margin-bottom:10px}
+.studio-body .studio-preview .ik-card-line{margin-top:12px}
 .studio-body .panel-top,.studio-body .sample-note,.studio-body .preview-bottom{line-height:1.4}
 .studio-body .studio-preview .demo-card{padding:20px;min-height:0}
 .studio-body .studio-tools>summary{cursor:pointer;color:#566358;padding:4px 0}

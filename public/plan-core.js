@@ -1,6 +1,7 @@
 import {componentSpec,validateComponentSpec,canExportComponent} from './effect-contract.js';
 import {effectiveParams,makeBrief} from './core.js';
 import {validateArtifact,generatedParams,generatedBrief} from './generated-core.js';
+import {constraintsFromIntent,evaluateConstraints} from './constraints.js';
 import {assertType} from './plan-schema.js';
 export const clone=value=>structuredClone(value);
 export const uid=()=>crypto.randomUUID();
@@ -20,6 +21,8 @@ export function catalogPayload(item,registry,params,locale='en'){
 }
 export function validatePayload(kind,payload,params,catalog){
  safeData(payload);
+ const allowed=kind==='catalog'?['schema','schema_version','item_id','canonical_name','requested_locale','content_locale','template_id','params','contract','brief','brief_template','sources','labels']:kind==='catalog-preview'?['schema','schema_version','item_id','template_id','template_version','contract']:null;
+ if(allowed&&Object.keys(payload).some(key=>!allowed.includes(key)))throw new Error('Unknown implementation field');
  if(kind==='catalog'){const spec=validateComponentSpec(payload,params);if(catalog){const item=catalog.items.find(i=>i.id===payload.item_id);if(!item||item.preview.template_id!==payload.template_id||!canExportComponent(item)||stable(payload.contract)!==stable(catalog.registry.templates[payload.template_id]))throw new Error('Unknown or changed catalog contract');}return spec.params;}
  if(kind==='catalog-preview'){if(!catalog||payload.schema!=='intentkit.catalog-preview'||payload.schema_version!==1)throw new Error('Unknown preview');const item=catalog.items.find(i=>i.id===payload.item_id);if(!item||item.preview.template_id!==payload.template_id||stable(payload.contract)!==stable(catalog.registry.templates[payload.template_id]))throw new Error('Unknown preview contract');return effectiveParams(item,catalog.registry,params);}
  if(kind==='generated'){const artifact=validateArtifact(payload);return generatedParams(artifact,params);}
@@ -27,8 +30,9 @@ export function validatePayload(kind,payload,params,catalog){
 }
 export function intentRecord(ir=null,text=''){
  const fields={};if(ir){const entries={target:ir.target,trigger:ir.interaction.trigger,feedback_strength:ir.intent.feedback_strength,'motion.amount':ir.motion.amount,'motion.speed':ir.motion.speed,'motion.bounce':ir.motion.bounce,'visual.glow':ir.visual.glow,'visual.tone':ir.visual.tone};
+  fields.avoid={value:clone(ir.avoid),source:ir.source==='user-edited'?'user-edited':'user-explicit'};
   const evidencePaths={trigger:'interaction.trigger',feedback_strength:'intent.feedback_strength'};
-  for(const [field,value]of Object.entries(entries)){const explicit=ir.evidence.some(e=>e.field===(evidencePaths[field]||field));fields[field]={value,source:value==='unspecified'?'unspecified':ir.source==='user-edited'?'user-edited':explicit?'user-explicit':ir.source==='model'?'model-inferred':'local-inferred'};}
+  for(const [field,value]of Object.entries(entries)){const explicit=ir.evidence.some(e=>e.field===(evidencePaths[field]||field));fields[field]={value,source:value==='unspecified'?'unspecified':explicit?'user-explicit':ir.source==='user-edited'?'user-edited':ir.source==='model'?'model-inferred':'local-inferred'};}
  }
  return {fields,unresolved:[],original:text,evidence:clone(ir?.evidence||[])};
 }
@@ -39,12 +43,12 @@ export async function behaviorFingerprint(plan,payload){
  if(plan.implementation.kind==='generated')implementation={html:payload.html,css:payload.css,js:payload.js,parameters:payload.parameters.map(({label,...p})=>p)};
  return digest({intent:plan.intent.fields,unresolved:plan.intent.unresolved,constraints:plan.constraints.map(({id,...c})=>c),params:plan.params,kind:plan.implementation.kind,implementation,scene:plan.scene});
 }
-export async function createRecord({kind,payload,params,intent=intentRecord(),constraints=[],scene=null,sourceFormat='intentkit.local/1',catalog,planId=uid(),revisionId=uid(),acknowledgements=[]}){
+export async function createRecord({kind,payload,params,intent=intentRecord(),constraints=null,scene=null,sourceFormat='intentkit.local/1',catalog,planId=uid(),revisionId=uid(),acknowledgements=[]}){
  const valid=validatePayload(kind,payload,params,catalog),target=kind==='generated'?'original':payload.template_id==='slide-fade-list'?'list':['press-feedback','ripple'].includes(payload.template_id)?'button':'card';
- const plan={schema:'intentkit.plan',schema_version:1,plan_id:planId,revision_id:revisionId,created_at:new Date().toISOString(),source_format:sourceFormat,intent:clone(intent),constraints:clone(constraints),implementation:{kind,payload_ref:uid()},params:valid,parameter_sources:Object.fromEntries(Object.keys(valid).map(k=>[k,'user-adjustment'])),scene:scene||{id:target,version:1,fixture_id:target+'-01'},behavior_fingerprint:'pending',validation:null,acknowledgements:clone(acknowledgements)};
+ const plan={schema:'intentkit.plan',schema_version:1,plan_id:planId,revision_id:revisionId,created_at:new Date().toISOString(),source_format:sourceFormat,intent:clone(intent),constraints:clone(constraints||constraintsFromIntent(intent)),implementation:{kind,payload_ref:uid()},params:valid,parameter_sources:Object.fromEntries(Object.keys(valid).map(k=>[k,'user-adjustment'])),scene:scene||{id:target,version:1,fixture_id:target+'-01'},behavior_fingerprint:'pending',validation:null,acknowledgements:clone(acknowledgements)};
  plan.behavior_fingerprint=await behaviorFingerprint(plan,payload);
  plan.acknowledgements=plan.acknowledgements.filter(a=>a.fingerprint===plan.behavior_fingerprint);
- plan.validation={schema:'intentkit.validation-report',schema_version:1,revision_id:revisionId,behavior_fingerprint:plan.behavior_fingerprint,environment:{app_version:'development'},checks:[{id:'params-schema',status:'pass',method:'schema',reason:'Validated by the shared implementation contract.',rule_version:1}],trust:'local'};
+ plan.validation={schema:'intentkit.validation-report',schema_version:1,revision_id:revisionId,behavior_fingerprint:plan.behavior_fingerprint,environment:{app_version:'development'},checks:[{id:'params-schema',status:'pass',method:'schema',reason:'Validated by the shared implementation contract.',rule_version:1}],trust:'local'};plan.validation.checks.push(...evaluateConstraints(plan));
  assertType(plan,'Plan');return {plan,payload:clone(payload)};
 }
 export function effectiveRecord(record,catalog){const {plan,payload}=record;assertType(plan,'Plan');const params=validatePayload(plan.implementation.kind,payload,plan.params,catalog);return plan.implementation.kind==='catalog'?validateComponentSpec(payload,params):{...clone(payload),params};}

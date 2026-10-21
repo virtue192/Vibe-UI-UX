@@ -15,7 +15,7 @@ export function setupProjectWorkbench({catalog,getRecord,applyRecord,guard,markS
  const input=el('input');input.type='file';input.accept='.json,application/json';input.hidden=true;toolbar.append(input);
  const buttons={};
  function action(key,fn){const button=el('button',w(key));button.type='button';button.dataset.projectAction=key;button.onclick=async()=>{try{await fn();}catch(error){status.textContent=w('error')+' · '+error.message;}};toolbar.append(button);buttons[key]=button;}
- async function capture(){const record=await getRecord();if(!record)throw new Error(w('unsupported'));latest=record;return record;}
+ async function capture(){const record=await getRecord();if(latest?.plan.behavior_fingerprint===record?.plan.behavior_fingerprint)record.plan.acknowledgements=clone(latest.plan.acknowledgements);if(!record)throw new Error(w('unsupported'));latest=record;return record;}
  async function save(newVersion=false){const record=await capture();const result=saveSnapshot(project,record,{candidateId:newVersion?currentCandidate:null,name:record.payload.title||record.payload.item_id||record.plan.implementation.kind});project=result.project;currentCandidate=result.snapshot.candidate_id;currentSnapshot=result.snapshot.id;statusKey='memory';markSaved();render();}
  action('saveCandidate',()=>save());action('saveVersion',()=>save(true));action('project',()=>{panel.hidden=!panel.hidden;render();});
  action('compare',()=>compare());
@@ -40,5 +40,11 @@ export function setupProjectWorkbench({catalog,getRecord,applyRecord,guard,markS
  function compare(){panel.hidden=false;let ids=Array.from(panel.querySelectorAll('[data-snapshot]:checked')).map(e=>e.dataset.snapshot);if(!ids.length)ids=project.candidates.map(c=>c.snapshot_ids.at(-1)).slice(0,3);if(ids.length<2||ids.length>3){status.textContent=w('chooseTwo');return;}try{const {project:next,round}=makeRound(project,ids,'directions');project=next;comparison?.dispose();const records=ids.map(id=>{const s=project.snapshots.find(s=>s.id===id),candidate=project.candidates.find(c=>c.id===s.candidate_id);return {...snapshotRecord(project,id),name:candidate.name+' · '+w('revision')+' '+(candidate.snapshot_ids.indexOf(id)+1)};});comparison=mountComparison(body,records,{catalog,onSelect(i){project=selectSnapshot(project,ids[i],round.id);render();dialog.close();}});heading.textContent=w('compare');close.textContent=w('close');dialog.showModal();}catch{status.textContent=w('sameScene');}}
  function showValidation(record){latest=record;checks.replaceChildren();checks.append(el('h3',w('validation')));for(const c of record.plan.validation.checks){const p=el('p',w(c.status)+' · '+c.id+' · '+c.reason);checks.append(p);}const issues=deliveryIssues(record.plan);if(issues.length){const button=el('button',w('accept'));button.onclick=()=>{record.plan=acknowledge(record.plan,issues.map(c=>c.id));latest=record;showValidation(record);};checks.append(button);}render();}
  document.addEventListener('intentkit-locale',()=>{render();if(latest)showValidation(latest);});render();
+ const allowed=new WeakSet();
+ document.addEventListener('click',async event=>{
+  const target=event.target.closest('#copy,#component-export > button,#compiler-copy,#compiler-export,#generated-panel [data-action="download"],#generated-panel [data-action="submit"]');
+  if(!target||allowed.has(target))return;event.preventDefault();event.stopImmediatePropagation();
+  try{const record=await capture();showValidation(record);if(deliveryIssues(record.plan).length){status.textContent=w('blocked');checks.scrollIntoView({block:'nearest'});return;}allowed.add(target);target.click();allowed.delete(target);}catch(e){status.textContent=w('error')+' · '+e.message;}
+ },true);
  return {capture,showValidation,acknowledged(record){if(latest?.plan.behavior_fingerprint===record.plan.behavior_fingerprint)record.plan.acknowledgements=clone(latest.plan.acknowledgements);return record;},getProject:()=>clone(project),getLatest:()=>latest,async refresh(){const r=await capture();showValidation(r);},dispose(){comparison?.dispose();dialog.remove();}};
 }

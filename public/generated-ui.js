@@ -11,7 +11,7 @@ import {locale,t} from './i18n.js';
 import {notify} from './motion.js';
 const node=(tag,cls,value)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(value!==undefined)e.textContent=value;return e;};
 const download=(blob,name)=>{const url=URL.createObjectURL(blob),a=node('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
-export function setupGeneratedStudio({getCredentials,appURL,mode,onStart,catalog}){
+export function setupGeneratedStudio({getCredentials,appURL,mode,onStart,catalog,getPalette=()=>null}){
  const button=document.querySelector('#generate'),panel=document.querySelector('#generated-panel'),input=document.querySelector('#intent');
  let runRequested=false,sourceText='',savedIntent=null;
  const changed=()=>document.dispatchEvent(new Event('intentkit-generated-change'));
@@ -65,7 +65,7 @@ export function setupGeneratedStudio({getCredentials,appURL,mode,onStart,catalog
  async function run(){
   const intent=input.value.trim();if(!intent)return notify(t('enterIntent'));const credentials=getCredentials();if(!credentials.key){notify(text('noKey'));document.querySelector('#connect').click();return;}
   sourceText=intent;savedIntent=null;runRequested=true;cancel();stop();artifact=null;params=null;failure=null;generating=true;imported=false;generationLocale=locale;audit=modelReceipt(credentials.model);progress=null;trace=null;startedAt=Date.now();endedAt=0;onStart?.();modeView(true);const active=new AbortController();request=active;render();const timer=setInterval(showProgress,1000);
-  try{const result=await requestGeneratedEffect({intent,model:credentials.model,key:credentials.key,platformModels:credentials.platformModels,locale:generationLocale,mode,signal:active.signal,appURL,onTrace(value){if(request===active){trace=value;showDiagnostics();}},onReceipt(value){if(request===active){audit=value;showDiagnostics();}},onProgress(value){if(request===active){progress=value;showProgress();}}});if(request!==active||active.signal.aborted)return;artifact=result;params=generatedParams(artifact);}
+  try{const result=await requestGeneratedEffect({intent:getPalette()?intent+'\nUse this user-selected palette: '+JSON.stringify(getPalette()):intent,model:credentials.model,key:credentials.key,platformModels:credentials.platformModels,locale:generationLocale,mode,signal:active.signal,appURL,onTrace(value){if(request===active){trace=value;showDiagnostics();}},onReceipt(value){if(request===active){audit=value;showDiagnostics();}},onProgress(value){if(request===active){progress=value;showProgress();}}});if(request!==active||active.signal.aborted)return;artifact=result;params=generatedParams(artifact);}
   catch(error){if(request!==active)return;failure=diagnostic(error);}
   finally{clearInterval(timer);if(request===active){endedAt=Date.now();request=null;generating=false;render();}}
  }
