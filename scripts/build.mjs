@@ -18,7 +18,7 @@ const metadata=JSON.parse(await readFile(path.join(root,'package.json'),'utf8'))
 if(!/^(?:0|[1-9]\d*)(?:\.(?:0|[1-9]\d*)){4}$/.test(metadata.intentkitVersion))throw new Error('intentkitVersion must have five integer segments');
 await writeFile(path.join(root,'dist/client/version.json'),JSON.stringify({version:metadata.intentkitVersion,package_version:metadata.version})+'\n');
 await writeFile(path.join(root,'dist/client/leaf-cursor.svg'),leafMarkup()+'\n');
-for(const name of ['index.html','studio.html','docs.html','authorize.html','effect-example.html','community.html','generated-frame.html','connection-check.html']){
+for(const name of ['index.html','studio.html','docs.html','authorize.html','effect-example.html','community.html','generated-frame.html','connection-check.html','integrations.html']){
  const file=path.join(root,'dist/client',name);const html=await readFile(file,'utf8');
  await writeFile(file,html.replaceAll('__PROJECT_VERSION__',metadata.intentkitVersion).replace(/((?:src|href)="\.\/[^"?]+\.(?:js|css|woff2|zip))"/g,'$1?v='+metadata.intentkitVersion+'"'));
 }
@@ -59,6 +59,9 @@ for(const recipe of compiler.recipes){
  for(const locale of ['zh-CN','en','ja','ko','de'])if(!recipe.locales[locale]?.name||!recipe.locales[locale]?.reason||!['draft','reviewed'].includes(recipe.locales[locale]?.review_status)||!compiler.strings[locale])throw new Error('Missing compiler locale or review status: '+locale);
 }
 await writeFile(path.join(root,'dist/client/compiler.json'),JSON.stringify(compiler));
+await cp(path.join(root,'examples/integrations/cases.json'),path.join(root,'dist/client/integration-cases.json'));
+const {schemas:planSchemas}=await import('../public/plan-schema.js');await writeFile(path.join(root,'dist/client/plan-schema.json'),JSON.stringify(planSchemas));
+await import('./sync-integration-skill.mjs');
 await writeFile(path.join(root,'dist/server/compiler-data.js'),'export default '+JSON.stringify(compiler)+';\n');
 for(const name of ['compiler-core.js','compiler-schema.js','generated-core.js','model-response.js','model-audit.js','generation-policy.js','generation-stream.js','usage-check.js'])await cp(path.join(root,'public',name),path.join(root,'dist/server',name));
 const files={};async function walk(dir,prefix=''){for(const name of await readdir(dir)){const filename=path.join(dir,name),key=prefix+'/'+name;if((await stat(filename)).isDirectory())await walk(filename,key);else files[key]=(await readFile(filename)).toString('base64');}}
