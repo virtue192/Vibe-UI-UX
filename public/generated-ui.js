@@ -1,3 +1,4 @@
+import {w} from './workbench-strings.js';
 import {modelReceipt} from './model-audit.js';
 import {requestGeneratedEffect} from './generation-client.js';
 import {mountGeneratedPreview} from './generated-preview.js';
@@ -12,12 +13,14 @@ const node=(tag,cls,value)=>{const e=document.createElement(tag);if(cls)e.classN
 const download=(blob,name)=>{const url=URL.createObjectURL(blob),a=node('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
 export function setupGeneratedStudio({getCredentials,appURL,mode,onStart,catalog}){
  const button=document.querySelector('#generate'),panel=document.querySelector('#generated-panel'),input=document.querySelector('#intent');
+ let runRequested=false,sourceText='',savedIntent=null;
+ const changed=()=>document.dispatchEvent(new Event('intentkit-generated-change'));
  let request=null,preview=null,artifact=null,params=null,ready=false,failure=null,generating=false,generationLocale=locale,config=null,imported=false,audit=null,progress=null,trace=null,startedAt=0,endedAt=0,auditSignature=null,lastProgress=0;
  const importLabel=document.querySelector('#generated-import-label');
  function stop(){preview?.dispose();preview=null;ready=false;}
  function modeView(active){document.body.dataset.studioMode=active?'generated':'library';}
  function cancel(){if(request){request.abort();request=null;generating=false;endedAt=Date.now();failure={code:'cancelled'};render();}}
- function status(value){ready=value==='ready';failure=value==='runtime'?{code:'runtime',received:true}:null;const status=panel.querySelector('[data-generated-status]');if(status)status.textContent=value==='ready'?text(imported?'importedReady':'ready'):errorText(failure);panel.querySelectorAll('[data-ready]').forEach(e=>e.disabled=!ready);}
+ function status(value){ready=value==='ready';changed();failure=value==='runtime'?{code:'runtime',received:true}:null;const status=panel.querySelector('[data-generated-status]');if(status)status.textContent=value==='ready'?text(imported?'importedReady':'ready'):errorText(failure);panel.querySelectorAll('[data-ready]').forEach(e=>e.disabled=!ready);}
  function startPreview(){stop();const stage=panel.querySelector('.generated-stage');if(!stage||!artifact)return;preview=mountGeneratedPreview(stage,artifact,params,{onStatus:status,title:artifact.title});}
  function showDiagnostics(){
   const box=panel.querySelector('[data-model-audit]');if(!box||!audit)return;const signature=JSON.stringify({audit,trace});if(signature===auditSignature)return;auditSignature=signature;box.replaceChildren();box.append(node('summary','',text('modelAudit')));
@@ -48,20 +51,20 @@ export function setupGeneratedStudio({getCredentials,appURL,mode,onStart,catalog
   const controls=node('div','generated-controls');
   for(const rule of artifact.parameters){const label=node('label'),name=node('span','',rule.label),control=node('input');control.dataset.generatedParam=rule.id;control.type=rule.type==='number'?'range':rule.type==='boolean'?'checkbox':'color';
    if(rule.type==='number'){control.min=rule.min;control.max=rule.max;control.step=rule.step;}control.value=params[rule.id];control.checked=params[rule.id]===true;const output=node('output','',params[rule.id]+(rule.unit||''));
-   control.addEventListener('input',()=>{params[rule.id]=rule.type==='number'?Number(control.value):rule.type==='boolean'?control.checked:control.value;output.textContent=params[rule.id]+(rule.unit||'');ready=false;panel.querySelectorAll('[data-ready]').forEach(e=>e.disabled=true);preview?.update(params);panel.querySelector('[data-generated-brief]').textContent=generatedBrief(artifact,params);});label.append(name,control,output);controls.append(label);
+   control.addEventListener('input',()=>{params[rule.id]=rule.type==='number'?Number(control.value):rule.type==='boolean'?control.checked:control.value;output.textContent=params[rule.id]+(rule.unit||'');ready=false;panel.querySelectorAll('[data-ready]').forEach(e=>e.disabled=true);preview?.update(params);changed();panel.querySelector('[data-generated-brief]').textContent=generatedBrief(artifact,params);});label.append(name,control,output);controls.append(label);
   }panel.append(controls);
   const actions=node('div','generated-actions');
-  for(const [key,handler]of [['restart',()=>{failure=null;startPreview();}],['stop',()=>{stop();message.textContent=text('paused');panel.querySelectorAll('[data-ready]').forEach(e=>e.disabled=true);}],['download',async()=>{try{download(await generatedZip(artifact,params),'intentkit-generated-web.zip');}catch{notify(t('apiNetwork'));}}],['submit',submission]]){
+  for(const [key,handler]of [['restart',()=>{runRequested=true;failure=null;startPreview();}],['stop',()=>{stop();message.textContent=text('paused');panel.querySelectorAll('[data-ready]').forEach(e=>e.disabled=true);}],['download',async()=>{try{download(await generatedZip(artifact,params),'intentkit-generated-web.zip');}catch{notify(t('apiNetwork'));}}],['submit',submission]]){
    const b=node('button','',text(key));b.dataset.action=key;if(['download','submit'].includes(key)){b.dataset.ready='';b.disabled=true;}b.addEventListener('click',handler);actions.append(b);
   }
   const json=node('button','',locale==='zh-CN'?'导出效果 JSON':'Export effect JSON');json.addEventListener('click',()=>download(new Blob([JSON.stringify(generatedProject(artifact,params),null,2)],{type:'application/json'}),'intentkit-generated-effect.json'));actions.append(json);panel.append(actions);
   const brief=node('pre','generated-brief',generatedBrief(artifact,params));brief.dataset.generatedBrief='';panel.append(brief);
   const source=node('details','generated-source');source.append(node('summary','',text('code')));for(const [name,value]of Object.entries({HTML:artifact.html,CSS:artifact.css,JavaScript:artifact.js})){source.append(node('h3','',name),node('pre','',value));}panel.append(source);
-  startPreview();
+  if(!imported||runRequested)startPreview();else stage.append(node('p','',w('waiting')));changed();
  }
  async function run(){
   const intent=input.value.trim();if(!intent)return notify(t('enterIntent'));const credentials=getCredentials();if(!credentials.key){notify(text('noKey'));document.querySelector('#connect').click();return;}
-  cancel();stop();artifact=null;params=null;failure=null;generating=true;imported=false;generationLocale=locale;audit=modelReceipt(credentials.model);progress=null;trace=null;startedAt=Date.now();endedAt=0;onStart?.();modeView(true);const active=new AbortController();request=active;render();const timer=setInterval(showProgress,1000);
+  sourceText=intent;savedIntent=null;runRequested=true;cancel();stop();artifact=null;params=null;failure=null;generating=true;imported=false;generationLocale=locale;audit=modelReceipt(credentials.model);progress=null;trace=null;startedAt=Date.now();endedAt=0;onStart?.();modeView(true);const active=new AbortController();request=active;render();const timer=setInterval(showProgress,1000);
   try{const result=await requestGeneratedEffect({intent,model:credentials.model,key:credentials.key,platformModels:credentials.platformModels,locale:generationLocale,mode,signal:active.signal,appURL,onTrace(value){if(request===active){trace=value;showDiagnostics();}},onReceipt(value){if(request===active){audit=value;showDiagnostics();}},onProgress(value){if(request===active){progress=value;showProgress();}}});if(request!==active||active.signal.aborted)return;artifact=result;params=generatedParams(artifact);}
   catch(error){if(request!==active)return;failure=diagnostic(error);}
   finally{clearInterval(timer);if(request===active){endedAt=Date.now();request=null;generating=false;render();}}
@@ -85,8 +88,9 @@ export function setupGeneratedStudio({getCredentials,appURL,mode,onStart,catalog
  }
  function clear(){cancel();stop();artifact=null;params=null;failure=null;audit=null;progress=null;trace=null;modeView(false);render();}
  button.addEventListener('click',run);input.addEventListener('input',cancel);
- importLabel.querySelector('input').addEventListener('change',async event=>{const file=event.target.files[0];if(!file)return;try{const project=importGeneratedProject(JSON.parse(await file.text()));cancel();stop();onStart?.();modeView(true);audit=null;progress=null;artifact=project.artifact;params=project.params;imported=true;failure=null;generationLocale=locale;render();}catch{notify(t('apiFormat'));}finally{event.target.value='';}});
+ importLabel.querySelector('input').addEventListener('change',async event=>{const file=event.target.files[0];if(!file)return;try{const project=importGeneratedProject(JSON.parse(await file.text()));cancel();stop();onStart?.();modeView(true);audit=null;progress=null;artifact=project.artifact;params=project.params;imported=true;failure=null;generationLocale=locale;sourceText='';savedIntent=null;runRequested=false;render();}catch{notify(t('apiFormat'));}finally{event.target.value='';}});
  addEventListener('pagehide',()=>{cancel();stop();});addEventListener('pageshow',event=>{if(event.persisted&&artifact)render();});
  matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change',()=>{if(artifact)render();});render();
- return {cancel,refreshLocale(){cancel();stop();render();},clear};
+ return {cancel,refreshLocale(){cancel();stop();render();},clear,getState:()=>artifact?{artifact:structuredClone(artifact),params:{...params},source_text:sourceText,intent:savedIntent?structuredClone(savedIntent):null}:null,load(value,values,intent){cancel();stop();onStart?.();artifact=validateImported(value);params=generatedParams(artifact,values);savedIntent=structuredClone(intent);sourceText=intent.original||'';document.querySelector('#intent').value=sourceText;imported=true;runRequested=false;failure=null;modeView(true);render();}};
+ function validateImported(value){return importGeneratedProject(value).artifact;}
 }
