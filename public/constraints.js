@@ -29,11 +29,12 @@ export function evaluateConstraints(plan){
    else if(c.kind==='subtle')valid=(p.lift_px??p['lift.lift_px']??0)<=5&&Math.abs(p.offset_y_px||0)<=20&&(p.scale_start??p['press.scale_start']??1)>=.94&&(p.opacity??0)<=.2;
    else if(c.kind==='reduced-motion'){status='unknown';reason='Runtime supports reduced motion; this revision still needs a browser behavior check.';}
    else if(c.field&&Object.hasOwn(p,c.field)){valid=c.operator==='eq'?p[c.field]===c.value:c.operator==='lte'?p[c.field]<=c.value:p[c.field]>=c.value;}
-   else {status='not-applicable';reason='The implementation does not expose this field.';}
+   else {status=c.kind==='exact'?'fail':'not-applicable';reason='The implementation does not expose this requested field.';}
    if(valid!==undefined){status=valid?'pass':'fail';reason='Compared final parameters with the recorded IntentKit rule, not a universal UX standard.';}
   }
   checks.push({id:'constraint-'+c.id,constraint_id:c.id,level:c.level,status,method:'deterministic-rule',reason,rule_version:1});
  }
  if(plan.implementation.kind==='generated')for(const id of ['parameter-effects','cleanup'])checks.push({id,status:'unknown',method:'behavioral-test',reason:'A returned controller does not prove behavior.',rule_version:1});
+ for(const [i,reason]of plan.intent.unresolved.entries())checks.push({id:'unresolved-'+i,status:'unknown',method:'deterministic-rule',level:'required',reason,rule_version:1});
  return checks;
 }

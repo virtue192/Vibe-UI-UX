@@ -1,3 +1,4 @@
+import {planArchive} from './plan-export.js';
 import {w} from './workbench-strings.js';
 import {clone,privateCopy,acknowledge,deliveryIssues,planBrief} from './plan-core.js';
 import {createProject,saveSnapshot,snapshotRecord,makeRound,selectSnapshot,removeCandidate,importProject} from './project-core.js';
@@ -6,21 +7,24 @@ import {mountComparison} from './plan-runtime.js';
 const el=(tag,text)=>{const e=document.createElement(tag);if(text)e.textContent=text;return e;};
 export function download(blob,name){const url=URL.createObjectURL(blob),a=el('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 export function setupProjectWorkbench({catalog,getRecord,applyRecord,guard,markSaved}){
- let project=createProject(),currentCandidate=null,currentSnapshot=null,comparison=null,loadRevision=0,statusKey='memory',latest=null;
+ let project=createProject(),currentCandidate=null,currentSnapshot=null,comparison=null,loadRevision=0,statusKey='noProject',latest=null;
  const storage=new ProjectStorage(),toolbar=el('div');toolbar.className='project-toolbar';document.querySelector('.studio-title').after(toolbar);
  const panel=el('section');panel.className='panel project-panel';panel.hidden=true;document.querySelector('.center-column').append(panel);
  const status=el('p');status.className='project-status';status.setAttribute('role','status');toolbar.after(status);
  const dialog=el('dialog');dialog.className='comparison-dialog';dialog.id='comparison-dialog';const heading=el('h2',w('compare'));heading.id='comparison-title';dialog.setAttribute('aria-labelledby',heading.id);const close=el('button',w('close')),body=el('div');close.onclick=()=>dialog.close();dialog.append(heading,close,body);document.body.append(dialog);dialog.addEventListener('close',()=>{comparison?.dispose();comparison=null;});
  const checks=el('section');checks.className='plan-validation';document.querySelector('.preview-panel').after(checks);
  const input=el('input');input.type='file';input.accept='.json,application/json';input.hidden=true;toolbar.append(input);
+ const more=el('details'),moreTitle=el('summary',w('tools'));more.className='project-tools';more.append(moreTitle);toolbar.append(more);
  const buttons={};
- function action(key,fn){const button=el('button',w(key));button.type='button';button.dataset.projectAction=key;button.onclick=async()=>{try{await fn();}catch(error){status.textContent=w('error')+' · '+error.message;}};toolbar.append(button);buttons[key]=button;}
+ function action(key,fn){const button=el('button',w(key));button.type='button';button.dataset.projectAction=key;button.onclick=async()=>{try{await fn();}catch(error){status.textContent=w('error')+' · '+error.message;}};if(['saveCandidate','saveVersion','project','compare'].includes(key))toolbar.insertBefore(button,more);else more.append(button);buttons[key]=button;}
  async function capture(){const record=await getRecord();if(latest?.plan.behavior_fingerprint===record?.plan.behavior_fingerprint)record.plan.acknowledgements=clone(latest.plan.acknowledgements);if(!record)throw new Error(w('unsupported'));latest=record;return record;}
  async function save(newVersion=false){const record=await capture();const result=saveSnapshot(project,record,{candidateId:newVersion?currentCandidate:null,name:record.payload.title||record.payload.item_id||record.plan.implementation.kind});project=result.project;currentCandidate=result.snapshot.candidate_id;currentSnapshot=result.snapshot.id;statusKey='memory';markSaved();render();}
  action('saveCandidate',()=>save());action('saveVersion',()=>save(true));action('project',()=>{panel.hidden=!panel.hidden;render();});
  action('compare',()=>compare());
  action('saveLocal',()=>showSave());action('loadLocal',async()=>{const token=++loadRevision,value=await storage.load();if(!value)throw new Error(w('noProject'));const next=await importProject(value,catalog);if(token!==loadRevision)return;guard(()=>applyProject(next));});
  action('exportProject',()=>{download(new Blob([JSON.stringify(privateCopy(project),null,2)],{type:'application/json'}),'intentkit-project.json');});
+ for(const target of ['web','react'])action(target==='web'?'exportWeb':'exportReact',async()=>{const record=await capture();if(deliveryIssues(record.plan).length){showValidation(record);throw new Error(w('blocked'));}download(await planArchive(record,target,{catalog}), 'intentkit-'+target+'.zip');});
+ action('copyBrief',async()=>{const record=await capture();if(deliveryIssues(record.plan).length){showValidation(record);throw new Error(w('blocked'));}await navigator.clipboard.writeText(planBrief(record,catalog));});
  action('importProject',()=>input.click());action('newProject',()=>guard(()=>{project=createProject();currentCandidate=null;currentSnapshot=null;statusKey='memory';render();markSaved();}));
  input.onchange=async()=>{const file=input.files[0];if(!file)return;const token=++loadRevision;try{const next=await importProject(JSON.parse(await file.text()),catalog);if(token!==loadRevision)return;guard(()=>applyProject(next));}catch(e){status.textContent=w('error')+' · '+e.message;}finally{input.value='';}};
  function applyProject(next){project=next;currentCandidate=null;currentSnapshot=null;latest=null;panel.hidden=false;statusKey='imported';render();markSaved();if(project.selection)restore(project.selection.snapshot_id);}
@@ -28,6 +32,7 @@ export function setupProjectWorkbench({catalog,getRecord,applyRecord,guard,markS
  function showSave(){const d=el('dialog');d.className='draft-dialog';const title=el('h2',w('saveLocal'));title.id='save-title';d.setAttribute('aria-labelledby',title.id);const note=el('p',w('localNotice')),label=el('label'),include=el('input'),save=el('button',w('saveLocal')),cancel=el('button',w('cancel')),remove=el('button',w('deleteLocal'));include.type='checkbox';label.append(include,document.createTextNode(w('includeInput')));d.append(title,note,label,save,cancel,remove);document.body.append(d);d.onclose=()=>d.remove();cancel.onclick=()=>d.close();save.onclick=async()=>{save.disabled=true;try{const result=await storage.save(project,include.checked);if(!result.superseded){statusKey='savedLocal';render();d.close();}}catch{statusKey='saveFailed';render();d.close();}};remove.onclick=()=>{if(!confirm(w('deleteConfirm')))return;storage.remove().then(()=>{statusKey='memory';render();d.close();}).catch(()=>{statusKey='saveFailed';render();});};d.showModal();}
  function render(){
   for(const [key,button]of Object.entries(buttons))button.textContent=w(key);buttons.saveVersion.disabled=!currentCandidate;buttons.compare.disabled=project.snapshots.length<2;buttons.exportProject.disabled=!project.snapshots.length;status.textContent=w(statusKey);
+  moreTitle.textContent=w('tools');
   if(latest&&project.selection){const selected=project.snapshots.find(s=>s.id===project.selection.snapshot_id);if(selected?.plan.behavior_fingerprint!==latest.plan.behavior_fingerprint)status.textContent+=' · '+w('selectedDiff');}
   panel.replaceChildren();const title=el('h2',w('project')),name=el('input');name.value=project.name;name.setAttribute('aria-label',w('name'));name.onchange=()=>{project.name=name.value.trim()||'IntentKit';};panel.append(title,name);
   if(!project.candidates.length)panel.append(el('p',w('noProject')));

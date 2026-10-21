@@ -4,7 +4,7 @@ import path from 'node:path';
 import {zipFiles} from '../public/zip.js';
 const root=fileURLToPath(new URL('../',import.meta.url)),skill=path.join(root,'skills/intentkit-integration');
 await mkdir(path.join(skill,'scripts/runtime'),{recursive:true});await mkdir(path.join(skill,'assets'),{recursive:true});
-const modules=['plan-core.js','plan-schema.js','project-core.js','constraints.js','compiler-schema.js','core.js','effect-contract.js','generated-core.js','generation-policy.js'];
+const modules=['composition-core.js','fragment-core.js','plan-core.js','plan-schema.js','project-core.js','constraints.js','compiler-schema.js','core.js','effect-contract.js','generated-core.js','generation-policy.js'];
 for(const name of modules)await cp(path.join(root,'public',name),path.join(skill,'scripts/runtime',name));
 await cp(path.join(root,'dist/client/catalog.json'),path.join(skill,'assets/catalog.json'));
 await cp(path.join(root,'tests/fixtures/generated-effect.json'),path.join(skill,'assets/generated-effect.json'));

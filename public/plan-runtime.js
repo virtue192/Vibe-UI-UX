@@ -3,10 +3,16 @@ import {mountEffect} from './effect-kit.js';
 import {mountPreview} from './previews.js';
 import {mountGeneratedPreview} from './generated-preview.js';
 import {w} from './workbench-strings.js';
+import {validateComposition} from './composition-core.js';
+import {mountComposition} from './composition-runtime.js';
+import {validateFragment} from './fragment-core.js';
+import {mountFragment} from './fragment-runtime.js';
 const node=(tag,text)=>{const e=document.createElement(tag);if(text)e.textContent=text;return e;};
-export const deterministic=record=>record.plan.implementation.kind==='catalog';
+export const deterministic=record=>['catalog','composition'].includes(record.plan.implementation.kind);
 export function mountPlan(host,record,{catalog,mode='interactive',onStatus=()=>{}}={}){
  const {plan,payload}=record;host.replaceChildren();
+ if(plan.implementation.kind==='composition')return mountComposition(host,validateComposition(payload,plan.params),{mode});
+ if(plan.implementation.kind==='fragment')return mountFragment(host,validateFragment(payload,plan.params),{mode});
  if(plan.implementation.kind==='catalog'){const spec=effectiveRecord(record,catalog);spec.labels=plan.scene.id==='button'?{button:'Save draft'}:plan.scene.id==='list'?{rows:['Understand','Adjust','Create']}:{title:'A small decision',body:'The same content, with your chosen feedback.'};const control=mountEffect(host,spec,{mode});return control;}
  if(plan.implementation.kind==='catalog-preview'){const item=catalog.items.find(i=>i.id===payload.item_id),dispose=mountPreview(host,item,plan.params);return {dispose};}
  if(plan.implementation.kind==='generated'){

@@ -6,7 +6,7 @@ export function importGeneratedProject(value){
  if(!['intentkit.generated-project','intentkit.community-case'].includes(value?.schema)||!value.artifact)throw new Error('format');
  return generatedProject(value.artifact,value.params);
 }
-export async function generatedZip(artifact,params,fetchFile=async name=>{const response=await fetch(new URL('./'+name,import.meta.url));if(!response.ok)throw new Error('network');return response.text();}){
+export async function generatedZip(artifact,params,fetchFile=async name=>{const response=await fetch(new URL('./'+name,import.meta.url));if(!response.ok)throw new Error('network');return response.text();},extraFiles={}){
  const project=generatedProject(artifact,params),files={};
  for(const name of ['generation-policy.js','generated-core.js','generated-preview.js','generated-frame.html','generated-frame.js','generated-frame-boot.js'])files[name]=(await fetchFile(name)).replace(/(\.\/[^'"?]+\.(?:js|css))\?v=[^'"]+/g,'$1');
  files['effect.json']=JSON.stringify(project,null,2);files['effect.html']=project.artifact.html;files['effect.css']=project.artifact.css;files['effect.js']=project.artifact.js;
@@ -19,5 +19,5 @@ const p=await(await fetch('./effect.json')).json(),params=generatedParams(p.arti
 document.querySelector('#title').textContent=p.artifact.title;document.querySelector('#summary').textContent=p.artifact.summary;
 const controller=mountGeneratedPreview(document.querySelector('#preview'),p.artifact,params,{onStatus(status){document.querySelector('#status').textContent=status;}});
 for(const rule of p.artifact.parameters){const label=document.createElement('label'),name=document.createElement('span'),input=document.createElement('input');name.textContent=rule.label;input.type=rule.type==='number'?'range':rule.type==='boolean'?'checkbox':'color';if(rule.type==='number'){input.min=rule.min;input.max=rule.max;input.step=rule.step;}input.value=params[rule.id];input.checked=params[rule.id]===true;const out=document.createElement('output');out.textContent=params[rule.id]+(rule.unit||'');input.addEventListener('input',()=>{params[rule.id]=rule.type==='number'?Number(input.value):rule.type==='boolean'?input.checked:input.value;out.textContent=params[rule.id]+(rule.unit||'');controller.update(params);});label.append(name,input,out);document.querySelector('#params').append(label);}addEventListener('pagehide',()=>controller.dispose());`;
- return zipFiles(files);
+ Object.assign(files,extraFiles);return zipFiles(files);
 }

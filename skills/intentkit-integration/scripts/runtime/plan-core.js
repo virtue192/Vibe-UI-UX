@@ -2,6 +2,8 @@ import {componentSpec,validateComponentSpec,canExportComponent} from './effect-c
 import {effectiveParams,makeBrief} from './core.js';
 import {validateArtifact,generatedParams,generatedBrief} from './generated-core.js';
 import {constraintsFromIntent,evaluateConstraints} from './constraints.js';
+import {validateComposition} from './composition-core.js';
+import {validateFragment} from './fragment-core.js';
 import {assertType} from './plan-schema.js';
 export const clone=value=>structuredClone(value);
 export const uid=()=>crypto.randomUUID();
@@ -26,6 +28,8 @@ export function validatePayload(kind,payload,params,catalog){
  if(kind==='catalog'){const spec=validateComponentSpec(payload,params);if(catalog){const item=catalog.items.find(i=>i.id===payload.item_id);if(!item||item.preview.template_id!==payload.template_id||!canExportComponent(item)||stable(payload.contract)!==stable(catalog.registry.templates[payload.template_id]))throw new Error('Unknown or changed catalog contract');}return spec.params;}
  if(kind==='catalog-preview'){if(!catalog||payload.schema!=='intentkit.catalog-preview'||payload.schema_version!==1)throw new Error('Unknown preview');const item=catalog.items.find(i=>i.id===payload.item_id);if(!item||item.preview.template_id!==payload.template_id||stable(payload.contract)!==stable(catalog.registry.templates[payload.template_id]))throw new Error('Unknown preview contract');return effectiveParams(item,catalog.registry,params);}
  if(kind==='generated'){const artifact=validateArtifact(payload);return generatedParams(artifact,params);}
+ if(kind==='composition')return validateComposition(payload,params,catalog).params;
+ if(kind==='fragment')return validateFragment(payload,params,catalog).params;
  throw new Error('Unsupported implementation: '+kind);
 }
 export function intentRecord(ir=null,text=''){
@@ -44,7 +48,7 @@ export async function behaviorFingerprint(plan,payload){
  return digest({intent:plan.intent.fields,unresolved:plan.intent.unresolved,constraints:plan.constraints.map(({id,...c})=>c),params:plan.params,kind:plan.implementation.kind,implementation,scene:plan.scene});
 }
 export async function createRecord({kind,payload,params,intent=intentRecord(),constraints=null,scene=null,sourceFormat='intentkit.local/1',catalog,planId=uid(),revisionId=uid(),acknowledgements=[]}){
- const valid=validatePayload(kind,payload,params,catalog),target=kind==='generated'?'original':payload.template_id==='slide-fade-list'?'list':['press-feedback','ripple'].includes(payload.template_id)?'button':'card';
+ const valid=validatePayload(kind,payload,params,catalog),target=kind==='fragment'?'fragment-'+payload.id:kind==='composition'?'button':kind==='generated'?'original':payload.template_id==='slide-fade-list'?'list':['press-feedback','ripple'].includes(payload.template_id)?'button':'card';
  const plan={schema:'intentkit.plan',schema_version:1,plan_id:planId,revision_id:revisionId,created_at:new Date().toISOString(),source_format:sourceFormat,intent:clone(intent),constraints:clone(constraints||constraintsFromIntent(intent)),implementation:{kind,payload_ref:uid()},params:valid,parameter_sources:Object.fromEntries(Object.keys(valid).map(k=>[k,'user-adjustment'])),scene:scene||{id:target,version:1,fixture_id:target+'-01'},behavior_fingerprint:'pending',validation:null,acknowledgements:clone(acknowledgements)};
  plan.behavior_fingerprint=await behaviorFingerprint(plan,payload);
  plan.acknowledgements=plan.acknowledgements.filter(a=>a.fingerprint===plan.behavior_fingerprint);
@@ -54,6 +58,7 @@ export async function createRecord({kind,payload,params,intent=intentRecord(),co
 export function effectiveRecord(record,catalog){const {plan,payload}=record;assertType(plan,'Plan');const params=validatePayload(plan.implementation.kind,payload,plan.params,catalog);return plan.implementation.kind==='catalog'?validateComponentSpec(payload,params):{...clone(payload),params};}
 export function planBrief(record,catalog,locale='en'){
  const {plan,payload}=record;if(plan.implementation.kind==='generated')return generatedBrief(payload,plan.params);
+ if(['composition','fragment'].includes(plan.implementation.kind))return payload.id+'\n'+JSON.stringify(plan.params,null,2)+'\n'+(payload.content?JSON.stringify(payload.content):'')+'\n'+JSON.stringify(plan.constraints)+'\n'+JSON.stringify(plan.validation.checks);
  if(plan.implementation.kind==='catalog')return validateComponentSpec(payload,plan.params).brief;
  const item=catalog.items.find(i=>i.id===payload.item_id);return makeBrief(item,catalog.registry,locale,plan.params);
 }
