@@ -11,14 +11,14 @@ export function setupStudioShell({getDraft,restoreDraft,hasKey}){
  const dialog=document.createElement('dialog');dialog.className='draft-dialog';const title=document.createElement('h2'),actions=document.createElement('div');title.id='draft-title';dialog.setAttribute('aria-labelledby',title.id);
  const keep=document.createElement('button'),discard=document.createElement('button'),cancel=document.createElement('button');actions.append(keep,discard,cancel);dialog.append(title,actions);document.body.append(dialog);
  const restore=document.createElement('button');restore.hidden=true;restore.className='restore-draft';$('.studio-title').append(restore);
- let dirty=false,kept=null,pending=null,bypass=false;
- const change=()=>{dirty=true;};$('#params').addEventListener('input',change);$('#intent').addEventListener('input',()=>{change();note.textContent=w('previous');});
+ let dirty=false,kept=null,pending=null,bypass=false,noteKey='sample';
+ const change=()=>{dirty=true;};$('#params').addEventListener('input',change);$('#intent').addEventListener('input',()=>{change();noteKey='previous';note.textContent=w(noteKey);});
  const choose=kind=>{if(kind==='keep'){kept=structuredClone(getDraft());restore.hidden=false;}const next=pending;pending=null;dialog.close();if(kind!=='cancel'){dirty=false;bypass=true;next?.();bypass=false;}};
  keep.onclick=()=>choose('keep');discard.onclick=()=>choose('discard');cancel.onclick=()=>choose('cancel');dialog.addEventListener('cancel',()=>{pending=null;});
  function guard(action){if(!dirty){action();return;}pending=action;dialog.showModal();}
- document.addEventListener('click',event=>{const target=event.target.closest('#items button,[data-example],#compile,#generate,#find');if(!target||bypass||!dirty)return;event.preventDefault();event.stopImmediatePropagation();guard(()=>target.click());},true);
+ document.addEventListener('click',event=>{const target=event.target.closest('#items button,[data-example],#compile,#generate,#find');if(!target||bypass||!dirty)return;if(target.matches('#compile,#generate,#find')){kept=structuredClone(getDraft());restore.hidden=false;return;}event.preventDefault();event.stopImmediatePropagation();guard(()=>target.click());},true);
  restore.onclick=()=>guard(()=>{restoreDraft(kept);dirty=false;});
- function refresh(){summary.textContent=w('tools');toggle.textContent=w('library');title.textContent=w('unsaved');keep.textContent=w('stash');discard.textContent=w('discard');cancel.textContent=w('cancel');restore.textContent=w('restoreDraft');if(!$('#compile').disabled)$('#compile').textContent=w('previewIdea');$('#compiler-helper').textContent=w(hasKey()?'ai':'local');if(!dirty)note.textContent=w('sample');}
+ function refresh(){summary.textContent=w('tools');toggle.textContent=w('library');title.textContent=w('unsaved');keep.textContent=w('stash');discard.textContent=w('discard');cancel.textContent=w('cancel');restore.textContent=w('restoreDraft');if(!$('#compile').disabled)$('#compile').textContent=w('previewIdea');$('#compiler-helper').textContent=w(hasKey()?'ai':'local');note.textContent=w(noteKey);}
  refresh();document.addEventListener('intentkit-locale',refresh);
- return {refresh,guard,markSaved(){dirty=false;},markChanged:change,setSample(value){note.textContent=value;},dispose(){dialog.remove();}};
+ return {refresh,guard,markSaved(){dirty=false;},markChanged:change,setApplied(){noteKey='applied';note.textContent=w(noteKey);},setSample(){noteKey='sample';note.textContent=w(noteKey);},dispose(){dialog.remove();}};
 }

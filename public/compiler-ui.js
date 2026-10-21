@@ -1,6 +1,8 @@
 import {compileDesign,editDesignIR,compatibleRecipes,updateCompilation,canExportCompilation,compilerFields} from './compiler-core.js';
 import {requestCompilerIntent} from './client-byok.js';
 import {w} from './workbench-strings.js';
+import {readNumericRequests} from './constraints.js';
+import {makeAgentBrief} from './compiler-core.js';
 import {locale,t} from './i18n.js';
 import {notify} from './motion.js';
 import {aiText,errorText} from './generated-strings.js';
@@ -62,7 +64,14 @@ export function setupCompilerPanel({catalog,data,getCredentials,onApplyRecipe,on
    catch(error){if(controller!==active)return;if(error.code==='cancelled')return;notice=diagnostic(error);}
    finally{clearTimeout(timeout);if(controller===active){controller=null;button.disabled=false;button.textContent=compilerText('compile');}}
   }
-  try{result=compileDesign({text,ir,catalog,data,locale});apply();render();}catch{notify(t('apiFormat'));}
+  try{
+   result=compileDesign({text,ir,catalog,data,locale});
+   const numeric=readNumericRequests(text),rules=result.recipe?catalog.registry.templates[result.recipe.template_id].params:{};
+   if(result.recipe&&Object.keys(numeric.values).length&&!numeric.unresolved.length&&Object.keys(numeric.values).every(k=>Object.hasOwn(rules,k))){
+    try{result=compileDesign({text,ir:result.ir,catalog,data,locale,recipeId:result.recipe.id,overrides:numeric.values});result.unresolved=result.unresolved.filter(c=>c!=='numeric-request-not-mapped');result.status=result.unresolved.length?'partial':'ready';result.agent_brief=makeAgentBrief(result,data);}catch{/* Keep the explicit unresolved request, never clamp or claim success. */}
+   }
+   apply();render();
+  }catch{notify(t('apiFormat'));}
  }
  function refreshLocale(){cancel();button.textContent=compilerText('compile');document.querySelector('#compiler-helper').textContent=compilerText('helper');examples.replaceChildren(node('span','',compilerText('examples')));
   for(const [id,texts]of samples){const b=node('button','',data.recipes.find(r=>r.id===id).locales[locale].name);b.dataset.example=id;b.title=texts[languages.indexOf(locale)];b.addEventListener('click',()=>{input.value=texts[languages.indexOf(locale)];run(true);});examples.append(b);}

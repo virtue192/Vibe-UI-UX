@@ -10,7 +10,7 @@ export function validateComposition(value,overrides={},catalog=null){
  if(!Array.isArray(value.effects)||value.effects.length!==2||typeof overrides!=='object'||!overrides||Array.isArray(overrides))throw new Error('Invalid composition effects');
  const params={},effects=[];
  for(const [i,[channel,type]]of combinations[value.id].entries()){
-  const effect=value.effects[i];if(effect?.channel!==channel||effect.spec?.template_id!==type||Object.keys(effect).some(k=>!['channel','spec'].includes(k)))throw new Error('Invalid effect channel');
+  const effect=value.effects[i];if(effect?.channel!==channel||effect.spec?.template_id!==type||Object.keys(effect).some(k=>!['channel','spec'].includes(k))||Object.keys(effect.spec).some(k=>!['schema','schema_version','template_id','contract','params','brief'].includes(k)))throw new Error('Invalid effect channel');
   if(catalog&&JSON.stringify(effect.spec.contract)!==JSON.stringify(catalog.registry.templates[type]))throw new Error('Changed composition contract');
   const input={};for(const key of Object.keys(effect.spec.contract.params)){const qualified=channel+'.'+key;input[key]=Object.hasOwn(overrides,qualified)?overrides[qualified]:value.params?.[qualified]??effect.spec.params[key];}
   const spec=validateComponentSpec(effect.spec,input);effects.push({channel,spec});for(const [key,v]of Object.entries(spec.params))params[channel+'.'+key]=v;

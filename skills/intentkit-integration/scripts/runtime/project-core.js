@@ -1,4 +1,4 @@
-import {clone,uid,stable,createRecord,validatePayload,behaviorFingerprint,privateCopy} from './plan-core.js';
+import {clone,uid,stable,createRecord,validatePayload,behaviorFingerprint,privateCopy,safeData} from './plan-core.js';
 import {assertType} from './plan-schema.js';
 export function createProject(name='IntentKit',version='development'){const now=new Date().toISOString();return {schema:'intentkit.project',schema_version:1,app_version:version,project_id:uid(),name,created_at:now,updated_at:now,payloads:{},candidates:[],snapshots:[],rounds:[],selection:null};}
 export function saveSnapshot(project,record,{candidateId=null,name='Candidate',derivedFrom=null}={}){
@@ -27,15 +27,18 @@ export async function validateProject(value,catalog){
  const used=new Set(next.snapshots.map(s=>s.plan.implementation.payload_ref));if(Object.keys(next.payloads).some(id=>!used.has(id)))throw new Error('Unused payload');return privateCopy(next,true);
 }
 export async function importProject(value,catalog){
+ safeData(value);
  if(value?.schema==='intentkit.project')return validateProject(value,catalog);
  let record;
- const versions={'intentkit.generated-effect':[1],'intentkit.generated-project':[1],'intentkit.component':[1],'intentkit.compilation':[1],'intentkit.community-case':[1,2]};if(value?.schema&&(!versions[value.schema]||!versions[value.schema].includes(value.schema_version)))throw new Error('Unsupported schema version');if(!value?.schema&&value?.schema_version!==1)throw new Error('Unsupported legacy version');
+ const versions={'intentkit.generated-effect':[1],'intentkit.generated-project':[1],'intentkit.component':[1],'intentkit.compilation':[1],'intentkit.community-case':[1,2],'intentkit.composition':[1],'intentkit.fragment':[1]};if(value?.schema&&(!versions[value.schema]||!versions[value.schema].includes(value.schema_version)))throw new Error('Unsupported schema version');if(!value?.schema&&value?.schema_version!==1)throw new Error('Unsupported legacy version');
  if(value?.schema==='intentkit.plan')throw new Error('A standalone Plan requires its implementation payload');
- if(['intentkit.generated-effect','intentkit.generated-project'].includes(value?.schema)||value?.kind==='generated')record=await createRecord({kind:'generated',payload:value.artifact||value,params:value.params||{},sourceFormat:value.schema+'/1'});
+ if(['intentkit.composition','intentkit.fragment'].includes(value?.schema))record=await createRecord({kind:value.schema==='intentkit.composition'?'composition':'fragment',payload:value,params:value.params||{},catalog,sourceFormat:value.schema+'/1'});
+ else if(['intentkit.generated-effect','intentkit.generated-project'].includes(value?.schema)||value?.kind==='generated')record=await createRecord({kind:'generated',payload:value.artifact||value,params:value.params||{},sourceFormat:value.schema+'/1'});
  else {
   const item=catalog.items.find(i=>i.id===(value?.item_id||value?.recipe?.item_id));if(!item)throw new Error('Unsupported import');
   const params=value.recipe?.params||value.params;if(!params||typeof params!=='object')throw new Error('Missing parameters');
   const {catalogPayload,intentRecord}=await import('./plan-core.js');const payload=catalogPayload(item,catalog.registry,params,value.requested_locale||'en');record=await createRecord({kind:payload.schema==='intentkit.component'?'catalog':'catalog-preview',payload,params,intent:intentRecord(value.ir||null,value.source_text||''),sourceFormat:(value.schema||'intentkit.effect')+'/'+(value.schema_version||1),catalog});
  }
+ if(value?.schema==='intentkit.community-case')record.plan.provenance={source_url:value.source_url||'',author:value.author?.display_name||'',github_login:value.author?.github_login||'',attribution:String(value.author?.attribution===true),license:value.license||'',case_id:value.id||''};
  return saveSnapshot(createProject(),record,{name:record.payload.title||record.payload.item_id||'Imported'}).project;
 }

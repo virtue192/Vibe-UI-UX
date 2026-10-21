@@ -12,9 +12,9 @@ export function constraintsFromIntent(intent){
 }
 export function readNumericRequests(text){
  const values={},unresolved=[];
- const patterns={lift_px:/(?:抬升|浮起|lift)\s*(\d+(?:\.\d+)?)\s*(?:px|像素)/giu,radius_px:/(?:半径|radius)\s*(\d+(?:\.\d+)?)\s*(?:px|像素)/giu,offset_y_px:/(?:入场距离|offset)\s*(\d+(?:\.\d+)?)\s*(?:px|像素)/giu,delay_ms:/(?:间隔|delay)\s*(\d+(?:\.\d+)?)\s*(?:ms|毫秒)/giu,duration_ms:/(?:时长|duration)\s*(\d+(?:\.\d+)?)\s*(?:ms|毫秒)/giu,opacity:/(?:透明度|opacity)\s*(0(?:\.\d+)?|1(?:\.0+)?)(?!\d)/giu,scale_start:/(?:缩放|scale)\s*(0(?:\.\d+)?|1(?:\.0+)?)(?!\d)/giu};
+ const patterns={lift_px:/(?:抬升|浮起|lift)\s*(-?\d+(?:\.\d+)?)\s*(?:px|像素)/giu,radius_px:/(?:半径|radius)\s*(-?\d+(?:\.\d+)?)\s*(?:px|像素)/giu,offset_y_px:/(?:入场距离|offset)\s*(-?\d+(?:\.\d+)?)\s*(?:px|像素)/giu,delay_ms:/(?:间隔|delay)\s*(-?\d+(?:\.\d+)?)\s*(?:ms|毫秒)/giu,duration_ms:/(?:时长|duration)\s*(-?\d+(?:\.\d+)?)\s*(?:ms|毫秒)/giu,opacity:/(?:透明度|opacity)\s*(-?\d+(?:\.\d+)?)(?!\d)/giu,scale_start:/(?:缩放|scale)\s*(-?\d+(?:\.\d+)?)(?!\d)/giu};
  for(const [key,pattern]of Object.entries(patterns)){const found=[...text.matchAll(pattern)].map(m=>Number(m[1]));if(new Set(found).size>1)unresolved.push('ambiguous-'+key);else if(found.length)values[key]=found[0];}
- const allMs=[...text.matchAll(/(\d+(?:\.\d+)?)\s*(?:ms\b|毫秒)/giu)];if(allMs.length===1&&!Object.hasOwn(values,'delay_ms')&&!Object.hasOwn(values,'duration_ms'))values.duration_ms=Number(allMs[0][1]);
+ const allMs=[...text.matchAll(/(-?\d+(?:\.\d+)?)\s*(?:ms\b|毫秒)/giu)];if(allMs.length===1&&!Object.hasOwn(values,'delay_ms')&&!Object.hasOwn(values,'duration_ms'))values.duration_ms=Number(allMs[0][1]);
  if(/\d\s*(?:px|像素|ms\b|毫秒)/iu.test(text)&&!Object.keys(values).length)unresolved.push('numeric-request-not-mapped');return {values,unresolved};
 }
 export function evaluateConstraints(plan){

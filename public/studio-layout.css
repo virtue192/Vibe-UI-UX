@@ -15,6 +15,13 @@
 .studio-body .panel{border-radius:12px;min-width:0}
 .studio-body .panel-top{padding:12px 16px;font-size:14px}
 .studio-body .intent-box{padding:12px 16px}
+.studio-body .intent-box{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 8px;padding:8px 16px}
+.studio-body .intent-box>label,.studio-body .intent-input-wrap,.studio-body .compiler-examples,.studio-body .candidate-row,.studio-body .candidate-reason{grid-column:1/-1}
+.studio-body .intent-box .intent-helper{grid-column:1;grid-row:3;margin:0;align-self:center}
+.studio-body .intent-box .studio-tools:not([open]){grid-column:2;grid-row:3;margin:0}
+.studio-body .intent-box .studio-tools[open]{grid-column:1/-1;grid-row:5}
+.studio-body .intent-box .compiler-examples{grid-row:4;flex-wrap:nowrap;overflow-x:auto;white-space:nowrap;margin:0}
+.studio-body .intent-box .compiler-examples button{flex:none}
 .studio-body .intent-box>label{margin-bottom:6px;font-size:14px}
 .studio-body .intent-input-wrap{display:flex;flex-direction:row;gap:10px}
 .studio-body .intent-input-wrap textarea{min-height:62px;max-height:120px;height:62px;padding:8px 10px;line-height:1.5;font-size:15px}
@@ -35,6 +42,19 @@
 .studio-body .intent-box>label{height:auto;min-height:0;margin:0 0 5px}
 .studio-body .preview-panel .panel-top{padding:6px 16px}
 .studio-body .sample-note{padding:5px 16px}
+.studio-body .project-status{margin:2px 0 4px}
+.project-tools{position:relative;font-size:12px;align-self:center}
+.project-tools summary{cursor:pointer;padding:5px 10px;min-height:32px}
+.project-tools[open]{background:#faf3e3;border:1px solid #d4ccb5;border-radius:8px}
+.structured-chooser button{padding:6px 10px;margin:4px;background:#eee6d3;border-radius:6px}
+.ik-fragment{padding:16px;font:16px/1.5 system-ui;width:100%;max-width:640px}
+.ik-fragment h3{font-size:22px;margin:0 0 8px}.ik-fragment p{font-size:14px;margin:8px 0}
+.ik-fragment button{padding:10px 16px;background:#233d32;color:#fff8e8;border-radius:8px;margin:4px}
+.ik-fragment label,.ik-fragment input:not([type=checkbox]){display:block}
+.ik-fragment input:not([type=checkbox]){max-width:100%;padding:8px;border:1px solid #d4ccb5;background:#fff9ed}
+.ik-fragment [aria-invalid=true]{outline:2px solid #b5452e}.ik-fragment [aria-pressed=true]{outline:3px solid #b5452e}
+.fragment-cards{display:flex;gap:8px;flex-wrap:wrap}
+@media(max-width:600px){.studio-body .studio-title{gap:6px}.studio-body .studio-title a{font-size:12px}.studio-body .intent-box .intent-helper{grid-column:1/-1}.studio-body .intent-box .studio-tools:not([open]){grid-column:1/-1;grid-row:5}.studio-body .intent-box .studio-tools>summary{padding:0;font-size:12px}.studio-body .project-toolbar{gap:4px;margin-bottom:2px}.studio-body .project-toolbar>button{min-height:30px;padding:4px 8px}}
 .studio-body .studio-preview .ik-effect-card{padding:18px}
 .studio-body .studio-preview .ik-card-title{font-size:24px;margin-bottom:6px}
 .studio-body .studio-preview .ik-card-body{font-size:16px;line-height:1.5}

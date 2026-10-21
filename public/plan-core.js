@@ -9,8 +9,8 @@ export const clone=value=>structuredClone(value);
 export const uid=()=>crypto.randomUUID();
 export function stable(value){
  if(value===null||typeof value!=='object')return JSON.stringify(value);
- if(Array.isArray(value))return '['+value.map(stable).join(',')+']';
- return '{'+Object.keys(value).sort().map(key=>JSON.stringify(key)+':'+stable(value[key])).join(',')+'}';
+ if(Array.isArray(value))return '['+value.map(v=>stable(v)??'null').join(',')+']';
+ return '{'+Object.keys(value).filter(key=>value[key]!==undefined).sort().map(key=>JSON.stringify(key)+':'+stable(value[key])).join(',')+'}';
 }
 export async function digest(value){return 'sha256:'+Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(stable(value)))),b=>b.toString(16).padStart(2,'0')).join('');}
 const secrets=/(?:github_pat_|gh[pousr]_|sk-)[A-Za-z0-9_-]{16,}/;
@@ -47,12 +47,14 @@ export async function behaviorFingerprint(plan,payload){
  if(plan.implementation.kind==='generated')implementation={html:payload.html,css:payload.css,js:payload.js,parameters:payload.parameters.map(({label,...p})=>p)};
  return digest({intent:plan.intent.fields,unresolved:plan.intent.unresolved,constraints:plan.constraints.map(({id,...c})=>c),params:plan.params,kind:plan.implementation.kind,implementation,scene:plan.scene});
 }
-export async function createRecord({kind,payload,params,intent=intentRecord(),constraints=null,scene=null,sourceFormat='intentkit.local/1',catalog,planId=uid(),revisionId=uid(),acknowledgements=[]}){
+export async function createRecord({kind,payload,params,intent=intentRecord(),constraints=null,scene=null,sourceFormat='intentkit.local/1',catalog,planId=uid(),revisionId=uid(),acknowledgements=[],runtimeState=null,provenance=null,parameterSources={}}){
  const valid=validatePayload(kind,payload,params,catalog),target=kind==='fragment'?'fragment-'+payload.id:kind==='composition'?'button':kind==='generated'?'original':payload.template_id==='slide-fade-list'?'list':['press-feedback','ripple'].includes(payload.template_id)?'button':'card';
- const plan={schema:'intentkit.plan',schema_version:1,plan_id:planId,revision_id:revisionId,created_at:new Date().toISOString(),source_format:sourceFormat,intent:clone(intent),constraints:clone(constraints||constraintsFromIntent(intent)),implementation:{kind,payload_ref:uid()},params:valid,parameter_sources:Object.fromEntries(Object.keys(valid).map(k=>[k,'user-adjustment'])),scene:scene||{id:target,version:1,fixture_id:target+'-01'},behavior_fingerprint:'pending',validation:null,acknowledgements:clone(acknowledgements)};
+ const plan={schema:'intentkit.plan',schema_version:1,plan_id:planId,revision_id:revisionId,created_at:new Date().toISOString(),source_format:sourceFormat,intent:clone(intent),constraints:clone(constraints||constraintsFromIntent(intent)),implementation:{kind,payload_ref:uid()},params:valid,parameter_sources:Object.fromEntries(Object.keys(valid).map(k=>[k,parameterSources[k]||'recipe-default'])),scene:scene||{id:target,version:1,fixture_id:target+'-01'},behavior_fingerprint:'pending',validation:null,acknowledgements:clone(acknowledgements)};
+ if(provenance)plan.provenance=clone(provenance);
  plan.behavior_fingerprint=await behaviorFingerprint(plan,payload);
  plan.acknowledgements=plan.acknowledgements.filter(a=>a.fingerprint===plan.behavior_fingerprint);
- plan.validation={schema:'intentkit.validation-report',schema_version:1,revision_id:revisionId,behavior_fingerprint:plan.behavior_fingerprint,environment:{app_version:'development'},checks:[{id:'params-schema',status:'pass',method:'schema',reason:'Validated by the shared implementation contract.',rule_version:1}],trust:'local'};plan.validation.checks.push(...evaluateConstraints(plan));
+ plan.validation={schema:'intentkit.validation-report',schema_version:1,revision_id:revisionId,behavior_fingerprint:plan.behavior_fingerprint,environment:{app_version:new URL(import.meta.url).searchParams.get('v')||'development'},checks:[{id:'params-schema',status:'pass',method:'schema',reason:'Validated by the shared implementation contract.',rule_version:1}],trust:'local'};plan.validation.checks.push(...evaluateConstraints(plan));
+ if(kind==='generated')plan.validation.checks.push({id:'runtime-initialization',status:runtimeState==='ready'?'pass':runtimeState==='runtime'?'fail':'unknown',method:'runtime',reason:'Sandbox initialization is separate from semantic verification.',level:'required',rule_version:1});
  assertType(plan,'Plan');return {plan,payload:clone(payload)};
 }
 export function effectiveRecord(record,catalog){const {plan,payload}=record;assertType(plan,'Plan');const params=validatePayload(plan.implementation.kind,payload,plan.params,catalog);return plan.implementation.kind==='catalog'?validateComponentSpec(payload,params):{...clone(payload),params};}
@@ -62,6 +64,6 @@ export function planBrief(record,catalog,locale='en'){
  if(plan.implementation.kind==='catalog')return validateComponentSpec(payload,plan.params).brief;
  const item=catalog.items.find(i=>i.id===payload.item_id);return makeBrief(item,catalog.registry,locale,plan.params);
 }
-export function deliveryIssues(plan){return plan.validation.checks.filter(c=>(c.status==='fail'||c.status==='unknown')&&c.level&&!plan.acknowledgements.some(a=>a.check_id===c.id&&a.fingerprint===plan.behavior_fingerprint));}
-export function acknowledge(plan,checkIds){const next=clone(plan);const allowed=new Set(next.validation.checks.filter(c=>['fail','unknown'].includes(c.status)&&c.level).map(c=>c.id));for(const checkId of checkIds){if(!allowed.has(checkId))throw new Error('Unknown acknowledgement');if(!next.acknowledgements.some(a=>a.check_id===checkId))next.acknowledgements.push({check_id:checkId,fingerprint:next.behavior_fingerprint});}return next;}
+export function deliveryIssues(plan){return plan.validation.checks.filter(c=>(c.status==='fail'||c.status==='unknown')&&c.level&&!plan.acknowledgements.some(a=>a.check_id===c.id&&a.check_status===c.status&&a.fingerprint===plan.behavior_fingerprint));}
+export function acknowledge(plan,checkIds){const next=clone(plan);const allowed=new Set(next.validation.checks.filter(c=>['fail','unknown'].includes(c.status)&&c.level).map(c=>c.id));for(const checkId of checkIds){if(!allowed.has(checkId))throw new Error('Unknown acknowledgement');next.acknowledgements=next.acknowledgements.filter(a=>a.check_id!==checkId);next.acknowledgements.push({check_id:checkId,check_status:next.validation.checks.find(c=>c.id===checkId).status,fingerprint:next.behavior_fingerprint});}return next;}
 export function privateCopy(value,includeInput=false){const next=clone(value);if(!includeInput){const redact=p=>{delete p.intent.original;p.intent.evidence=[];};if(next.schema==='intentkit.project')for(const s of next.snapshots)redact(s.plan);else if(next.schema==='intentkit.plan')redact(next);}return safeData(next);}

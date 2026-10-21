@@ -8,7 +8,7 @@ export function createFragment(id,registry){
 export function validateFragment(value,overrides={},catalog=null){
  if(value?.schema!=='intentkit.fragment'||value.schema_version!==1||value.fragment_version!==1||!Object.hasOwn(fragmentStates,value.id)||!fragmentStates[value.id].includes(value.state)||Object.keys(value).some(k=>!['schema','schema_version','id','fragment_version','content','state','effect','params'].includes(k)))throw new Error('Invalid fragment');
  const c=value.content;if(!c||Object.keys(c).some(k=>!['title','body','items'].includes(k))||typeof c.title!=='string'||typeof c.body!=='string'||!Array.isArray(c.items)||c.items.length<1||c.items.length>12||c.items.some(i=>typeof i!=='string'))throw new Error('Invalid fragment content');
- if(value.effect?.template_id!==templates[value.id])throw new Error('Unexpected fragment effect');if(catalog&&JSON.stringify(value.effect.contract)!==JSON.stringify(catalog.registry.templates[templates[value.id]]))throw new Error('Changed fragment contract');
+ if(value.effect?.template_id!==templates[value.id]||Object.keys(value.effect).some(k=>!['schema','schema_version','template_id','contract','params','brief'].includes(k)))throw new Error('Unexpected fragment effect');if(catalog&&JSON.stringify(value.effect.contract)!==JSON.stringify(catalog.registry.templates[templates[value.id]]))throw new Error('Changed fragment contract');
  const spec=validateComponentSpec(value.effect,{...value.params,...overrides});return {...structuredClone(value),effect:spec,params:spec.params};
 }
 export function fragmentParameters(spec){return spec.effect.contract.params;}

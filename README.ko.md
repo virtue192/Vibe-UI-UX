@@ -6,7 +6,10 @@
 
 [홈페이지](https://vibe-design-labs.github.io/Vibe-UI-UX/) · [작업대 체험](https://vibe-design-labs.github.io/Vibe-UI-UX/studio.html) · [변경 기록](CHANGELOG.md)
 
-**v0.4.4.0.2 · 75 디자인 항목 · 75 전용 미리보기 템플릿 · 5 로컬 레시피 유형 · MIT + OFL**
+**v0.5.0.0.0 · 75 디자인 항목 · 75 전용 미리보기 템플릿 · 5 로컬 레시피 유형 · MIT + OFL**
+
+작업대 개편: 후보·버전 비교, 로컬 프로젝트, 공통 제약, 통합 사례 8개, 사용자 Skill, 제한된 효과 조합과 네 가지 조각. 현재 로컬 구현이며 공식 사이트에 배포되지 않았습니다. [가이드](docs/WORKBENCH_GUIDE.md) · [검증 범위](docs/RELEASE_0.5.0.0.0.md).
+
 
 [![실제 작업대 녹화: 나뭇잎 커서, 따뜻한 스포트라이트, 클릭 파동, 순차 등장](docs/media/effects.gif)](https://vibe-design-labs.github.io/Vibe-UI-UX/studio.html?item=custom-cursor)
 

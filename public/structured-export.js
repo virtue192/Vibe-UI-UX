@@ -1,7 +1,7 @@
 import {validateComposition} from './composition-core.js';
 import {validateFragment} from './fragment-core.js';
 import {zipFiles} from './zip.js';
-export const structuredKit=['core.js','effect-contract.js','effect-timing.js','effect-webgl.js','effect-kit.js','composition-core.js','composition-runtime.js','fragment-core.js','fragment-runtime.js'];
+export const structuredKit=['core.js','effect-contract.js','effect-timing.js','effect-webgl.js','effect-kit.js','composition-core.js','composition-runtime.js','fragment-core.js','fragment-runtime.js','fragment-strings.js'];
 export function structuredFiles(input,target='web'){
  if(!['web','react'].includes(target))throw new Error('Unsupported structured target');
  const composition=input?.schema==='intentkit.composition',spec=composition?validateComposition(input):validateFragment(input),kind=composition?'Composition':'Fragment';

@@ -6,7 +6,10 @@
 
 [Website](https://vibe-design-labs.github.io/Vibe-UI-UX/) · [Studio ausprobieren](https://vibe-design-labs.github.io/Vibe-UI-UX/studio.html) · [Änderungen](CHANGELOG.md)
 
-**v0.4.4.0.2 · 75 Designeinträge · 75 eigene Vorschauvorlagen · 5 lokale Rezeptfamilien · MIT + OFL**
+**v0.5.0.0.0 · 75 Designeinträge · 75 eigene Vorschauvorlagen · 5 lokale Rezeptfamilien · MIT + OFL**
+
+Neue Werkbank: Kandidaten und Revisionen, Vergleich, lokale Projekte, gemeinsame Vorgaben, 8 Integrationsfälle, ein Nutzer-Skill, kontrollierte Kombinationen und vier Bausteine. Lokal implementiert, noch nicht veröffentlicht. [Anleitung](docs/WORKBENCH_GUIDE.md) · [Prüfgrenzen](docs/RELEASE_0.5.0.0.0.md).
+
 
 [![Echte Studioaufnahme: Blattzeiger, warmes Spotlight, Klickwelle und gestaffeltes Erscheinen](docs/media/effects.gif)](https://vibe-design-labs.github.io/Vibe-UI-UX/studio.html?item=custom-cursor)
 
