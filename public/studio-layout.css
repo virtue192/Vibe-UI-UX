@@ -1,0 +1,62 @@
+/* Scoped workbench layout. Existing landing pages keep their own styles. */
+.studio-body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}
+.studio-body [hidden]{display:none!important}
+.studio-body button,.studio-body input,.studio-body select,.studio-body textarea{font-family:inherit;font-size:14px}
+.studio-body button{min-height:36px;cursor:pointer}
+.studio-body button:focus-visible,.studio-body summary:focus-visible{outline:3px solid #b5452e;outline-offset:3px}
+.studio-body .studio-header{height:64px;padding:0 24px;position:relative}
+.studio-body .studio-main{max-width:1800px;padding:14px 24px;margin:auto}
+.studio-body .studio-title{margin:0 0 12px;gap:12px;align-items:center;flex-wrap:wrap}
+.studio-body .studio-title h1{font-size:24px;margin:0;font-family:'IntentKit Brush',serif;line-height:1.4}
+.studio-body .studio-title p,.studio-body .studio-version{display:none}
+.studio-body .studio-layout{display:grid;grid-template-columns:210px minmax(0,1fr) 260px;gap:16px;align-items:start}
+.studio-body .library-panel{height:calc(100dvh - 140px);min-height:360px;grid-column:auto;grid-row:auto;position:sticky;top:12px}
+.studio-body .center-column{gap:12px;min-width:0}
+.studio-body .panel{border-radius:12px;min-width:0}
+.studio-body .panel-top{padding:12px 16px;font-size:14px}
+.studio-body .intent-box{padding:12px 16px}
+.studio-body .intent-box>label{margin-bottom:6px;font-size:14px}
+.studio-body .intent-input-wrap{display:flex;flex-direction:row;gap:10px}
+.studio-body .intent-input-wrap textarea{min-height:62px;max-height:120px;height:62px;padding:8px 10px;line-height:1.5;font-size:15px}
+.studio-body .intent-actions{display:flex;flex-direction:column;gap:5px;min-width:135px}
+.studio-body #compile{order:-1;background:#233d32;color:#fff8e8;padding:8px 12px}
+.studio-body #generate{background:#eee6d3;color:#233d32;padding:6px 12px}
+.studio-body .intent-helper{font-size:12px;line-height:1.5;margin:6px 0}
+.studio-body .compiler-examples{margin-top:4px;gap:5px}
+.studio-body .compiler-examples>span{display:none}
+.studio-body .compiler-examples button{min-height:28px;font-size:12px;padding:4px 8px}
+.studio-body .studio-tools{font-size:13px;margin-top:6px}
+.studio-body #candidates:empty,.studio-body #reason:empty{display:none}
+.studio-body .intent-box *,.studio-body .param-panel *{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}
+.studio-body .intent-box label{line-height:1.4}
+.studio-body .intent-actions button#generate{font-size:14px;min-height:34px}
+.studio-body .intent-actions button#compile{min-height:34px}
+.studio-body .panel-top,.studio-body .sample-note,.studio-body .preview-bottom{line-height:1.4}
+.studio-body .studio-preview .demo-card{padding:20px;min-height:0}
+.studio-body .studio-tools>summary{cursor:pointer;color:#566358;padding:4px 0}
+.studio-body .studio-tools[open]{padding-bottom:8px}
+.studio-body .studio-tools p{font-size:13px;line-height:1.6}
+.studio-body .studio-tools #find{padding:8px 12px;background:#ede5d2;border-radius:6px}
+.studio-body .sample-note{font-size:12px;margin:0;padding:8px 16px;border-bottom:1px solid #d4ccb5;color:#566358}
+.studio-body .studio-preview{height:280px;min-height:280px;padding:16px;background-color:#f4ecd9;overflow:auto}
+.studio-body .studio-preview .ik-demo-shell{min-height:240px;padding:8px}
+.studio-body .preview-bottom{padding:8px 16px;font-size:12px}
+.studio-body .param-panel{max-height:calc(100dvh - 140px);overflow:auto;position:sticky;top:12px;grid-column:auto}
+.studio-body .param-panel .params{display:block;padding:0 16px}
+.studio-body .param-control{margin:18px 0}
+.studio-body .param-control>span,.studio-body .param-control output{font-size:14px}
+.studio-body .output-section{padding:14px 16px}
+.studio-body .output-text{min-height:0;font-size:14px;line-height:1.65}
+.studio-body .detail-panel{padding:14px 16px}
+.studio-body .detail-panel p{font-size:14px;line-height:1.7}
+.studio-body .library-toggle{display:none}
+.studio-body .restore-draft{font-size:12px;background:#ede5d2;padding:4px 10px;border-radius:6px}
+.studio-body .draft-dialog{max-width:min(520px,calc(100vw - 32px));background:#faf3e3;color:#233d32;border:1px solid #d4ccb5;border-radius:14px;padding:24px}
+.studio-body .draft-dialog::backdrop{background:#233d3266}
+.studio-body .draft-dialog div{display:flex;flex-wrap:wrap;gap:8px}
+.studio-body .draft-dialog button{padding:8px 12px;border:1px solid #d4ccb5;background:#f4ecd9;border-radius:6px}
+.studio-body .item-button strong{font-size:14px}.studio-body .item-button span{font-size:12px}
+.studio-body .studio-bottom{font-size:12px;flex-wrap:wrap}
+@media(max-width:1100px){.studio-body .studio-layout{grid-template-columns:180px minmax(0,1fr) 230px}.studio-body .studio-main{padding:12px}.studio-body .studio-layout{gap:12px}}
+@media(max-width:950px){.studio-body .studio-layout{grid-template-columns:minmax(0,1fr) 250px}.studio-body .library-panel{display:none}.studio-body .library-toggle{display:inline-block;padding:5px 12px;background:#eee6d3;border-radius:6px}.studio-body .library-open{display:flex;position:static;grid-column:1/-1;height:280px;min-height:0}.studio-body .library-open .item-list{display:block}}
+@media(max-width:600px){.studio-body .studio-main{padding:10px}.studio-body .studio-header{padding:0 10px;height:60px}.studio-body .studio-title h1{font-size:21px}.studio-body .studio-layout{grid-template-columns:minmax(0,1fr)}.studio-body .param-panel{max-height:none;position:static}.studio-body .intent-input-wrap{flex-direction:column}.studio-body .intent-actions{flex-direction:row;flex-wrap:wrap;min-width:0}.studio-body .intent-actions button{flex:1;min-width:120px}.studio-body .studio-preview{height:auto;min-height:280px}.studio-body .param-panel .params{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 16px}.studio-body .selected-canonical{overflow-wrap:anywhere}.studio-body .studio-bottom{align-items:flex-start}.studio-body .studio-header .brand{font-size:18px}.studio-body .compiler-examples button{font-size:12px}.studio-body .library-open{grid-column:auto}}

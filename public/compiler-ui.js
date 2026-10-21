@@ -1,11 +1,12 @@
 import {compileDesign,editDesignIR,compatibleRecipes,updateCompilation,canExportCompilation,compilerFields} from './compiler-core.js';
 import {requestCompilerIntent} from './client-byok.js';
+import {w} from './workbench-strings.js';
 import {locale,t} from './i18n.js';
 import {notify} from './motion.js';
 import {aiText,errorText} from './generated-strings.js';
 import {diagnostic} from './model-response.js';
 import {languages,compilerDictionaries} from './compiler-ui-strings.js';
-export const compilerText=key=>compilerDictionaries[locale][key]||key;
+export const compilerText=key=>key==='compile'?w('previewIdea'):compilerDictionaries[locale][key]||key;
 const node=(tag,cls,text)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=text;return e;};
 const fieldValue=(ir,path)=>path.split('.').reduce((v,k)=>v[k],ir);
 function fieldRule(schema,path){return path.split('.').reduce((v,k)=>v.properties[k],schema);}
